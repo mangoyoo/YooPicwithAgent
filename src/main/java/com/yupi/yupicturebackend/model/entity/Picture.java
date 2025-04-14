@@ -114,6 +114,10 @@ public class Picture implements Serializable {
      * 审核时间
      */
     private Date reviewTime;
+    /**
+     * 缩略图 url
+     */
+    private String thumbnailUrl;
 
 
     @TableField(exist = false)

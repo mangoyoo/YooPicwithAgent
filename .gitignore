@@ -5,7 +5,6 @@ target/
 !**/src/test/**/target/
 ###Custom##
 application-local.yml
-mcp-servers.json
 ### STS ###
 .apt_generated
 .classpath
@@ -14,8 +13,6 @@ mcp-servers.json
 .settings
 .springBeans
 .sts4-cache
-# .gitignore
-application-secret.yml
 
 ### IntelliJ IDEA ###
 .idea
