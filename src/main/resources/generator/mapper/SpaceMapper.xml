@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.mangoyoo.yoopicbackend.mapper.SpaceMapper">
+<mapper namespace="com.yupi.yupicturebackend.mapper.SpaceMapper">
 
-    <resultMap id="BaseResultMap" type="com.mangoyoo.yoopicbackend.model.entity.Space">
+    <resultMap id="BaseResultMap" type="com.yupi.yupicturebackend.model.entity.Space">
             <id property="id" column="id" />
             <result property="spaceName" column="spaceName" />
             <result property="spaceLevel" column="spaceLevel" />

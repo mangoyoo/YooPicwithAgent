@@ -18,6 +18,6 @@ public class PictureUploadByBatchRequest {
      * 名称前缀
      */
     private String namePrefix;
-
+    private Long spaceId;
 }
 

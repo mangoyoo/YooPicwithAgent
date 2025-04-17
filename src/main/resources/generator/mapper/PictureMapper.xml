@@ -26,6 +26,8 @@
         <result property="reviewerId" column="reviewerId" jdbcType="BIGINT"/>
         <result property="reviewTime" column="reviewTime" jdbcType="TIMESTAMP"/>
         <result property="thumbnailUrl" column="thumbnailUrl" jdbcType="VARCHAR"/>
+        <result property="spaceId" column="spaceId" jdbcType="BIGINT"/>
+        <result property="picColor" column="picColor" jdbcType="VARCHAR"/>
     </resultMap>
 
     <sql id="Base_Column_List">
@@ -34,6 +36,6 @@
     picSize,picWidth,picHeight,
     picScale,picFormat,userId,
     createTime,editTime,updateTime,
-    isDelete
+    isDelete,spaceId,picColor
     </sql>
 </mapper>

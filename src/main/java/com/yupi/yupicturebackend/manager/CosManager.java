@@ -66,13 +66,20 @@ public class CosManager {
         thumbnailRule.setBucket(cosClientConfig.getBucket());
         String thumbnailKey = FileUtil.mainName(key) + "_thumbnail." + FileUtil.getSuffix(key);
         thumbnailRule.setFileId(thumbnailKey);
-        // 缩放规则 /thumbnail/<Width>x<Height>>（如果大于原图宽高，则不处理）
-        thumbnailRule.setRule(String.format("imageMogr2/thumbnail/%sx%s>", 128, 128));
+
+        // 改进缩略图配置，提高清晰度
+        // 1. 提高缩略图尺寸到256x256
+        // 2. 添加质量参数(90%)
+        // 3. 增加锐化处理
+        // 4. 指定缩放模式为proportional-max(等比缩放)
+        thumbnailRule.setRule(String.format("imageMogr2/thumbnail/%sx%s>/quality/90/sharpen/50", 256, 256));
+
         rules.add(thumbnailRule);
         // 构造处理参数
         picOperations.setRules(rules);
         putObjectRequest.setPicOperations(picOperations);
         return cosClient.putObject(putObjectRequest);
+
     }
 
 

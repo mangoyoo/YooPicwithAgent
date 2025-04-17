@@ -6,22 +6,17 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
-public class PictureUpdateRequest implements Serializable {
+public class PictureEditByBatchRequest implements Serializable {
 
     /**
-     * id
+     * 图片 id 列表
      */
-    private Long id;
+    private List<Long> pictureIdList;
 
     /**
-     * 图片名称
+     * 空间 id
      */
-    private String name;
-
-    /**
-     * 简介
-     */
-    private String introduction;
+    private Long spaceId;
 
     /**
      * 分类
@@ -32,11 +27,7 @@ public class PictureUpdateRequest implements Serializable {
      * 标签
      */
     private List<String> tags;
-    /**
-     * 空间 id
-     */
-    private Long spaceId;
-
 
     private static final long serialVersionUID = 1L;
 }
+
