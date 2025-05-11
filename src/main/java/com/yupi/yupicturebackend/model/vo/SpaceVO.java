@@ -3,9 +3,11 @@ package com.yupi.yupicturebackend.model.vo;
 import com.yupi.yupicturebackend.model.entity.Space;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
-
+import cn.hutool.core.bean.BeanUtil;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class SpaceVO implements Serializable {
@@ -68,6 +70,14 @@ public class SpaceVO implements Serializable {
      * 创建用户信息
      */
     private UserVO user;
+    /**
+     * 空间类型：0-私有 1-团队
+     */
+    private Integer spaceType;
+    /**
+     * 权限列表
+     */
+    private List<String> permissionList = new ArrayList<>();
 
     private static final long serialVersionUID = 1L;
 

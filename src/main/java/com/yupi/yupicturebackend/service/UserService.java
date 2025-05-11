@@ -2,6 +2,7 @@ package com.yupi.yupicturebackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.yupi.yupicturebackend.dto.user.UserAvatarUpdateRequest;
 import com.yupi.yupicturebackend.dto.user.UserQueryRequest;
 import com.yupi.yupicturebackend.model.entity.User;
 import com.yupi.yupicturebackend.model.vo.LoginUserVO;
@@ -76,6 +77,9 @@ public interface UserService extends IService<User> {
      */
     boolean isAdmin(User user);
 
+    UserVO setUserAvatar(Object inputSource, UserAvatarUpdateRequest userAvatarUpdateRequest, User loginUser);
+
+    boolean userChangePassword(String userAccount, String userPassword, String newPassword);
 }
 
 

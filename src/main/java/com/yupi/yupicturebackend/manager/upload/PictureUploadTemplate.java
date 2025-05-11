@@ -10,6 +10,7 @@ import com.qcloud.cos.model.ciModel.persistence.CIObject;
 import com.qcloud.cos.model.ciModel.persistence.ImageInfo;
 import com.qcloud.cos.model.ciModel.persistence.ProcessResults;
 import com.yupi.yupicturebackend.config.CosClientConfig;
+import com.yupi.yupicturebackend.dto.file.UploadAvatarResult;
 import com.yupi.yupicturebackend.dto.file.UploadPictureResult;
 import com.yupi.yupicturebackend.exception.BusinessException;
 import com.yupi.yupicturebackend.exception.ErrorCode;
@@ -113,6 +114,45 @@ public abstract class PictureUploadTemplate {
         return uploadPictureResult;
     }
 
+// ... existing code ...
+
+    /**
+     * 上传用户头像
+     * 与普通图片上传不同，头像只需要存储一份原始图片
+     */
+    public final UploadAvatarResult uploadUserAvatar(Object inputSource, String uploadPathPrefix) {
+        // 1. 校验图片
+        validPicture(inputSource);
+
+        // 2. 图片上传地址
+        String uploadFilename = "UserAvatar";
+        String uploadPath = String.format("/%s/%s", uploadPathPrefix, uploadFilename);
+
+        File file = null;
+        try {
+            // 3. 创建临时文件
+            file = File.createTempFile(uploadPath, null);
+            // 处理文件来源（本地或 URL）
+            processFile(inputSource, file);
+
+            // 4. 上传头像到对象存储，不需要处理多个版本
+            PutObjectResult putObjectResult = cosManager.putObject(uploadPath, file);
+
+            // 5. 封装返回结果 - 使用UploadAvatarResult
+            UploadAvatarResult uploadAvatarResult = new UploadAvatarResult();
+            uploadAvatarResult.setUrl(cosClientConfig.getHost() + "/" + uploadPath);
+
+            return uploadAvatarResult;
+        } catch (Exception e) {
+            log.error("头像上传到对象存储失败", e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
+        } finally {
+            // 6. 清理临时文件
+            deleteTempFile(file);
+        }
+    }
+
+// ... existing code ...
 
     /**
      * 删除临时文件

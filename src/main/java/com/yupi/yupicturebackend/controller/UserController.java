@@ -5,6 +5,7 @@ import com.yupi.yupicturebackend.annotation.AuthCheck;
 import com.yupi.yupicturebackend.common.BaseResponse;
 import com.yupi.yupicturebackend.common.DeleteRequest;
 import com.yupi.yupicturebackend.common.ResultUtils;
+import com.yupi.yupicturebackend.dto.picture.PictureUploadRequest;
 import com.yupi.yupicturebackend.dto.user.*;
 import com.yupi.yupicturebackend.exception.BusinessException;
 import com.yupi.yupicturebackend.exception.ErrorCode;
@@ -16,6 +17,7 @@ import com.yupi.yupicturebackend.model.vo.UserVO;
 import com.yupi.yupicturebackend.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -155,6 +157,78 @@ public class UserController {
         return ResultUtils.success(userVOPage);
     }
 
+    /**
+     * 用户更新自己的信息
+     */
+    @PostMapping("/set/vo")
+    public BaseResponse<Boolean> updateUserInfo(@RequestBody UserVOUpdateRequest userVOUpdateRequest,
+                                                HttpServletRequest request) {
+        // 首先获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+
+        // 确保参数不为空且包含用户ID
+        if (userVOUpdateRequest == null || userVOUpdateRequest.getId() == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        // 检查请求的用户ID是否与当前登录用户ID一致
+        if (!userVOUpdateRequest.getId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "只能更新自己的信息");
+        }
+
+        // 更新用户信息
+        User user = new User();
+        BeanUtils.copyProperties(userVOUpdateRequest, user);
+        boolean result = userService.updateById(user);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(true);
+    }
+
+    @PostMapping("/set/avatar")
+    public BaseResponse<UserVO> updateUserAvatar(
+    @RequestPart("file")
+    MultipartFile multipartFile,
+    UserAvatarUpdateRequest userAvatarUpdateRequest,
+    HttpServletRequest request) {
+        // 首先获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+
+        // 确保参数不为空且包含用户ID
+        if (userAvatarUpdateRequest == null || userAvatarUpdateRequest.getId() == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        // 检查请求的用户ID是否与当前登录用户ID一致
+        if (!userAvatarUpdateRequest.getId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "只能更新自己的信息");
+        }
+
+
+        UserVO userVO = userService.setUserAvatar(multipartFile, userAvatarUpdateRequest, loginUser);
+        ThrowUtils.throwIf(userVO == null || userVO.getId() == null, ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(userVO);
+    }
+    /**
+     * 用户修改密码
+     *
+     * @param userPassChangeRequest 用户修改密码请求
+     * @return 是否成功
+     */
+    @PostMapping("/update/password")
+    public BaseResponse<Boolean> userChangePassword(@RequestBody UserPassChangeRequest userPassChangeRequest) {
+        ThrowUtils.throwIf(userPassChangeRequest == null, ErrorCode.PARAMS_ERROR);
+        String userAccount = userPassChangeRequest.getUserAccount();
+        String userPassword = userPassChangeRequest.getUserPassword();
+        String newPassword = userPassChangeRequest.getNewPassword();
+        boolean result = userService.userChangePassword(userAccount, userPassword, newPassword);
+        return ResultUtils.success(result);
+    }
 
 }
 

@@ -37,4 +37,6 @@ public interface SpaceService extends IService<Space> {
     void validDeleteSpace(Long spaceId, User loginUser);
 
     void updateSpace(Space space);
+
+    void checkSpaceAuth(User loginUser, Space space);
 }

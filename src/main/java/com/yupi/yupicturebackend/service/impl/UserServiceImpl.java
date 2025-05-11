@@ -5,10 +5,16 @@ import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.yupi.yupicturebackend.dto.file.UploadAvatarResult;
+import com.yupi.yupicturebackend.dto.user.UserAvatarUpdateRequest;
 import com.yupi.yupicturebackend.dto.user.UserQueryRequest;
 import com.yupi.yupicturebackend.enums.UserRoleEnum;
 import com.yupi.yupicturebackend.exception.BusinessException;
 import com.yupi.yupicturebackend.exception.ErrorCode;
+import com.yupi.yupicturebackend.exception.ThrowUtils;
+import com.yupi.yupicturebackend.manager.upload.FilePictureUpload;
+import com.yupi.yupicturebackend.manager.upload.PictureUploadTemplate;
+import com.yupi.yupicturebackend.model.auth.StpKit;
 import com.yupi.yupicturebackend.model.entity.User;
 import com.yupi.yupicturebackend.model.vo.LoginUserVO;
 import com.yupi.yupicturebackend.model.vo.UserVO;
@@ -20,6 +26,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 import java.util.ArrayList;
@@ -37,7 +44,8 @@ import static com.yupi.yupicturebackend.model.constant.UserConstant.USER_LOGIN_S
 @Slf4j
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService{
-
+    @Resource
+    private FilePictureUpload filePictureUpload;
     @Override
     public long userRegister(String userAccount, String userPassword, String checkPassword) {
         // 1. 校验
@@ -107,7 +115,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         // 3. 记录用户的登录态
         request.getSession().setAttribute(USER_LOGIN_STATE, user);
+        // 4. 记录用户登录态到 Sa-token，便于空间鉴权时使用，注意保证该用户信息与 SpringSession 中的信息过期时间一致
+        StpKit.SPACE.login(user.getId());
+        StpKit.SPACE.getSession().set(USER_LOGIN_STATE, user);
         return this.getLoginUserVO(user);
+
     }
 
     @Override
@@ -191,6 +203,72 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public boolean isAdmin(User user) {
         return user != null && UserRoleEnum.ADMIN.getValue().equals(user.getUserRole());
     }
+    @Override
+    public UserVO setUserAvatar(Object inputSource, UserAvatarUpdateRequest userAvatarUpdateRequest, User loginUser) {
+        // 校验参数
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
+        String uploadPathPrefix;
+        uploadPathPrefix=String.format("UserAvatar/%s", loginUser.getId());
+        PictureUploadTemplate pictureUploadTemplate = filePictureUpload;
+        UploadAvatarResult uploadAvatarResult = pictureUploadTemplate.uploadUserAvatar(inputSource, uploadPathPrefix);
+        User user = new User();
+        user.setId(loginUser.getId());
+        user.setUserAvatar(uploadAvatarResult.getUrl());
+        boolean result = this.updateById(user);
+        UserVO userVO = new UserVO();
+        BeanUtils.copyProperties(user, userVO);
+        return userVO;
+    }
+    /**
+     * 修改用户密码
+     * @param userAccount 用户账号
+     * @param userPassword 原密码
+     * @param newPassword 新密码
+     * @return 是否成功
+     */
+    @Override
+    public boolean userChangePassword(String userAccount, String userPassword, String newPassword) {
+        // 1. 校验
+        if (StrUtil.hasBlank(userAccount, userPassword, newPassword)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
+        }
+        if (userAccount.length() < 4) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户账号错误");
+        }
+        if (userPassword.length() < 8) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "原密码格式错误");
+        }
+        if (newPassword.length() < 8) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "新密码过短");
+        }
+
+        // 检查新密码不能与原密码相同
+        if (userPassword.equals(newPassword)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "新密码不能与原密码相同");
+        }
+
+        // 2. 验证原密码是否正确
+        String encryptPassword = getEncryptPassword(userPassword);
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("userAccount", userAccount);
+        queryWrapper.eq("userPassword", encryptPassword);
+        User user = this.baseMapper.selectOne(queryWrapper);
+        // 用户不存在或密码错误
+        if (user == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户不存在或原密码错误");
+        }
+
+        // 3. 加密新密码并更新
+        String encryptNewPassword = getEncryptPassword(newPassword);
+        user.setUserPassword(encryptNewPassword);
+        boolean updateResult = this.updateById(user);
+        if (!updateResult) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "密码修改失败，数据库错误");
+        }
+
+        return true;
+    }
+
 
 }
 
