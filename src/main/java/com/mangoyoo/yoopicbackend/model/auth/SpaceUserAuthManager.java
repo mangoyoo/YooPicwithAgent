@@ -12,7 +12,7 @@ import com.mangoyoo.yoopicbackend.enums.SpaceTypeEnum;
 import generator.domain.SpaceUser;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 

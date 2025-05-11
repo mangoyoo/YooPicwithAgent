@@ -7,7 +7,7 @@ import com.mangoyoo.yoopicbackend.model.vo.SpaceUserVO;
 import generator.domain.SpaceUser;
 import com.baomidou.mybatisplus.extension.service.IService;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**

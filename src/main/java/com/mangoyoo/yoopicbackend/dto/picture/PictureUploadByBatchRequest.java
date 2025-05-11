@@ -2,8 +2,6 @@ package com.mangoyoo.yoopicbackend.dto.picture;
 
 import lombok.Data;
 
-import java.util.List;
-
 @Data
 public class PictureUploadByBatchRequest {
 
@@ -21,14 +19,5 @@ public class PictureUploadByBatchRequest {
      */
     private String namePrefix;
     private Long spaceId;
-    /**
-     * 分类
-     */
-    private String category;
-
-    /**
-     * 标签
-     */
-    private List<String> tags;
 }
 

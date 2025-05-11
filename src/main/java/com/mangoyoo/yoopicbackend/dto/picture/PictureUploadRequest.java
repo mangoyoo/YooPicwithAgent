@@ -3,7 +3,6 @@ package com.mangoyoo.yoopicbackend.dto.picture;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.List;
 
 @Data
 public class PictureUploadRequest implements Serializable {
@@ -27,15 +26,7 @@ public class PictureUploadRequest implements Serializable {
      * 空间 id
      */
     private Long spaceId;
-    /**
-     * 分类
-     */
-    private String category;
 
-    /**
-     * 标签
-     */
-    private List<String> tags;
 }
 
 

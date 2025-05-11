@@ -42,8 +42,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Resource;
-import jakarta.servlet.http.HttpServletRequest;
+import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.awt.*;
 import java.io.IOException;
 import java.util.*;
@@ -149,8 +149,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setSpaceId(spaceId); // 指定空间 id
         picture.setUrl(uploadPictureResult.getUrl());
         picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
-        picture.setCategory(pictureUploadRequest.getCategory());
-        picture.setTags(JSONUtil.toJsonStr(pictureUploadRequest.getTags()));
         // 支持外层传递图片名称
         String picName = uploadPictureResult.getPicName();
         if (pictureUploadRequest != null && StrUtil.isNotBlank(pictureUploadRequest.getPicName())) {
@@ -252,13 +250,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         queryWrapper.isNull(nullSpaceId, "spaceId");
         queryWrapper.ge(ObjUtil.isNotEmpty(startEditTime), "editTime", startEditTime);
         queryWrapper.lt(ObjUtil.isNotEmpty(endEditTime), "editTime", endEditTime);
-// JSON 数组查询
+        // JSON 数组查询
         if (CollUtil.isNotEmpty(tags)) {
             for (String tag : tags) {
                 queryWrapper.like("tags", "\"" + tag + "\"");
             }
         }
-
         // 排序
         queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
         return queryWrapper;
@@ -416,8 +413,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                     // 设置图片名称，序号连续递增
                     pictureUploadRequest.setPicName(namePrefix + (uploadCount + 1));
                     pictureUploadRequest.setSpaceId(pictureUploadByBatchRequest.getSpaceId());
-                    pictureUploadRequest.setCategory(pictureUploadByBatchRequest.getCategory());
-                    pictureUploadRequest.setTags(pictureUploadByBatchRequest.getTags());
                 }
 
                 PictureVO pictureVO = this.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
@@ -636,219 +631,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 创建任务
         return aliYunAiApi.createOutPaintingTask(taskRequest);
     }
-    /**
-     * 获取用户图片统计信息
-     * 统计用户在不同类型空间中的图片数量：
-     * - 公共空间（spaceId为空）
-     * - 私人空间（spaceId不为空且spaceType=0）
-     * - 团队空间（spaceId不为空且spaceType=1）
-     *
-     * @param userId 用户ID
-     * @return 包含三种空间图片数量的Map
-     */
-    @Override
-    public Map<String, Long> getUserPictureStatistics(Long userId) {
-        // 验证用户ID
-        ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "无效的用户ID");
-
-        // 初始化结果结构
-        Map<String, Long> statistics = new HashMap<>();
-        Long publicSpaceCount = 0L;  // 公共空间图片数量
-        Long privateSpaceCount = 0L; // 私人空间图片数量
-        Long teamSpaceCount = 0L;    // 团队空间图片数量
-
-        // 获取用户的所有图片
-        List<Picture> userPictures = this.lambdaQuery()
-                .eq(Picture::getUserId, userId)
-                .list();
-
-        if (CollUtil.isEmpty(userPictures)) {
-            // 未找到图片，返回零值
-            statistics.put("publicSpaceCount", publicSpaceCount);
-            statistics.put("privateSpaceCount", privateSpaceCount);
-            statistics.put("teamSpaceCount", teamSpaceCount);
-            return statistics;
-        }
-
-        // 统计公共空间的图片数量（spaceId为空）
-        publicSpaceCount = userPictures.stream()
-                .filter(picture -> picture.getSpaceId() == null)
-                .count();
-
-        // 获取非公共图片的所有空间ID
-        Set<Long> spaceIds = userPictures.stream()
-                .filter(picture -> picture.getSpaceId() != null)
-                .map(Picture::getSpaceId)
-                .collect(Collectors.toSet());
-
-        if (!spaceIds.isEmpty()) {
-            // 获取所有相关空间的信息
-            List<Space> spaces = spaceService.lambdaQuery()
-                    .in(Space::getId, spaceIds)
-                    .list();
-
-            // 创建spaceId到spaceType的映射，以便快速查找
-            Map<Long, Integer> spaceTypeMap = spaces.stream()
-                    .collect(Collectors.toMap(Space::getId, Space::getSpaceType));
-
-            // 按空间类型统计图片
-            for (Picture picture : userPictures) {
-                Long spaceId = picture.getSpaceId();
-                if (spaceId != null && spaceTypeMap.containsKey(spaceId)) {
-                    Integer spaceType = spaceTypeMap.get(spaceId);
-                    if (spaceType != null) {
-                        if (spaceType == 0) {
-                            // 私人空间
-                            privateSpaceCount++;
-                        } else if (spaceType == 1) {
-                            // 团队空间
-                            teamSpaceCount++;
-                        }
-                    }
-                }
-            }
-        }
-
-        // 填充结果Map
-        statistics.put("publicSpaceCount", publicSpaceCount);    // 公共空间图片数量
-        statistics.put("privateSpaceCount", privateSpaceCount);  // 私人空间图片数量
-        statistics.put("teamSpaceCount", teamSpaceCount);        // 团队空间图片数量
-        return statistics;
-    }
-    @Override
-    public List<String> findRandomPictureUrlsByTags(List<String> tags, String category, Integer count) {
-        ThrowUtils.throwIf(CollUtil.isEmpty(tags) && StrUtil.isBlank(category),
-                ErrorCode.PARAMS_ERROR, "分类和标签不能同时为空");
-        ThrowUtils.throwIf(count == null || count <= 0, ErrorCode.PARAMS_ERROR, "查找数量必须大于0");
-
-        // 构建查询条件
-        QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
-
-        // 只查询公共图库的图片（spaceId为null）
-        queryWrapper.isNull("spaceId");
-
-        // 检查删除标记（假设0表示未删除，1表示已删除）
-        queryWrapper.eq("isDelete", 0);
-
-        // 审核状态为通过
-        queryWrapper.eq("reviewStatus", PictureReviewStatusEnum.PASS.getValue());
-
-        // 分类匹配（如果提供了分类）
-        if (StrUtil.isNotBlank(category)) {
-            queryWrapper.eq("category", category);
-        }
-
-        // 标签匹配 - 根据现有代码的逻辑，tags存储为JSON字符串
-        if (CollUtil.isNotEmpty(tags)) {
-            for (String tag : tags) {
-                queryWrapper.like("tags", "\"" + tag + "\"");
-            }
-        }
-
-        // 只查询需要的字段以提高性能
-        queryWrapper.select("url");
-
-        // 执行查询
-        List<Picture> pictureList = this.list(queryWrapper);
-
-        // 如果没有找到图片，返回空列表
-        if (CollUtil.isEmpty(pictureList)) {
-            return Collections.emptyList();
-        }
-
-        // 提取URL列表
-        List<String> urlList = pictureList.stream()
-                .map(Picture::getUrl)
-                .filter(StrUtil::isNotBlank)
-                .collect(Collectors.toList());
-
-        // 如果找到的图片数量不超过请求数量，直接返回所有URL
-        if (urlList.size() <= count) {
-            return urlList;
-        }
-
-        // 随机选择指定数量的图片URL
-        Collections.shuffle(urlList);
-        return urlList.subList(0, count);
-    }
-    public List<String> findPictureUrlsByColorSimilarity(String picColor, Integer count) {
-        // 1. 参数校验
-        ThrowUtils.throwIf(StrUtil.isBlank(picColor), ErrorCode.PARAMS_ERROR, "颜色参数不能为空");
-
-        // count参数校验和默认值处理
-        if (count == null || count <= 0) {
-            count = 1; // 默认数量
-        }
-        ThrowUtils.throwIf(count > 5, ErrorCode.PARAMS_ERROR, "查找数量不能超过5");
-
-        try {
-            // 2. 查询公共图库下所有有主色调的图片
-            List<Picture> pictureList = this.lambdaQuery()
-                    .isNull(Picture::getSpaceId)  // 只查询公共图库
-                    .eq(Picture::getIsDelete, 0)  // 未删除
-                    .eq(Picture::getReviewStatus, PictureReviewStatusEnum.PASS.getValue())  // 审核通过
-                    .isNotNull(Picture::getPicColor)  // 必须有主色调
-                    .select(Picture::getUrl, Picture::getPicColor)  // 只查询需要的字段
-                    .list();
-
-            // 如果没有图片，直接返回空列表
-            if (CollUtil.isEmpty(pictureList)) {
-                return Collections.emptyList();
-            }
-
-            // 3. 将目标颜色转为 Color 对象
-            Color targetColor;
-            try {
-                targetColor = Color.decode(picColor);
-            } catch (NumberFormatException e) {
-                log.error("颜色格式错误: {}", picColor, e);
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "颜色格式错误，请使用十六进制格式，如 #FF0000");
-            }
-
-            // 4. 按颜色相似度排序，先取前10张相似度最高的图片
-            List<String> top10Urls = pictureList.stream()
-                    .filter(picture -> StrUtil.isNotBlank(picture.getUrl()) && StrUtil.isNotBlank(picture.getPicColor()))
-                    .sorted(Comparator.comparingDouble(picture -> {
-                        try {
-                            // 提取图片主色调
-                            String hexColor = picture.getPicColor();
-                            Color pictureColor = Color.decode(hexColor);
-                            // 计算相似度，越大越相似，所以用负值排序（让相似度高的排在前面）
-                            return -ColorSimilarUtils.calculateSimilarity(targetColor, pictureColor);
-                        } catch (Exception e) {
-                            log.warn("处理图片颜色失败: {}", picture.getPicColor(), e);
-                            // 处理失败的图片放到最后
-                            return Double.MAX_VALUE;
-                        }
-                    }))
-                    .map(Picture::getUrl)
-                    .limit(10)  // 先取前10张
-                    .collect(Collectors.toList());
-
-            // 5. 从前10张中随机选择指定数量
-            List<String> resultUrls = new ArrayList<>();
-            if (!top10Urls.isEmpty()) {
-                // 如果请求数量大于等于可用数量，直接返回所有
-                if (count >= top10Urls.size()) {
-                    resultUrls = new ArrayList<>(top10Urls);
-                } else {
-                    // 随机选择指定数量
-                    List<String> shuffledUrls = new ArrayList<>(top10Urls);
-                    Collections.shuffle(shuffledUrls);
-                    resultUrls = shuffledUrls.subList(0, count);
-                }
-            }
-
-            log.info("按颜色 {} 从前10张相似图片中随机选择了 {} 张", picColor, resultUrls.size());
-            return resultUrls;
-
-        } catch (Exception e) {
-            log.error("按颜色查找图片失败", e);
-            return Collections.emptyList();
-        }
-    }
-
-
 
 }
 
