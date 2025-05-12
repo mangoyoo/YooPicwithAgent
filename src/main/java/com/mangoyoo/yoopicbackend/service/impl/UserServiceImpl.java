@@ -21,16 +21,18 @@ import com.mangoyoo.yoopicbackend.model.entity.User;
 import com.mangoyoo.yoopicbackend.model.vo.LoginUserVO;
 import com.mangoyoo.yoopicbackend.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.connector.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
-
+import com.mangoyoo.yoopicbackend.config.CosClientConfig;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import static com.mangoyoo.yoopicbackend.model.constant.UserConstant.USER_LOGIN_STATE;
@@ -46,6 +48,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService {
     @Resource
     private FilePictureUpload filePictureUpload;
+    @Resource
+    private CosClientConfig cosClientConfig;
+
     @Override
     public long userRegister(String userAccount, String userPassword, String checkPassword) {
         // 1. 校验
@@ -74,8 +79,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         User user = new User();
         user.setUserAccount(userAccount);
         user.setUserPassword(encryptPassword);
-        user.setUserName("无名");
+        user.setUserName(userAccount);
         user.setUserRole(UserRoleEnum.USER.getValue());
+        int randomNum = new Random().nextInt(17) + 1; // 生成 1~17 的随机数
+        user.setUserAvatar(String.format(cosClientConfig.getHost() + "/UserAvatar/default/default%d", randomNum));
         boolean saveResult = this.save(user);
         if (!saveResult) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败，数据库错误");

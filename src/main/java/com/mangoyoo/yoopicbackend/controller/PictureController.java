@@ -41,6 +41,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import cn.hutool.core.util.StrUtil;
 @Slf4j
@@ -230,8 +231,8 @@ public class PictureController {
     @GetMapping("/tag_category")
     public BaseResponse<PictureTagCategory> listPictureTagCategory() {
         PictureTagCategory pictureTagCategory = new PictureTagCategory();
-        List<String> tagList = Arrays.asList("热门", "搞笑", "生活", "高清", "艺术", "校园", "背景", "简历", "创意");
-        List<String> categoryList = Arrays.asList("模板", "电商", "表情包", "素材", "海报");
+        List<String> tagList = Arrays.asList("热门", "艺术", "动漫", "自然", "校园");
+        List<String> categoryList = Arrays.asList( "壁纸", "表情包","头像");
         pictureTagCategory.setTagList(tagList);
         pictureTagCategory.setCategoryList(categoryList);
         return ResultUtils.success(pictureTagCategory);
@@ -364,5 +365,29 @@ public class PictureController {
         GetOutPaintingTaskResponse task = aliYunAiApi.getOutPaintingTask(taskId);
         return ResultUtils.success(task);
     }
+    @PostMapping("/get/statistics")
+    public BaseResponse<Map<String, Long>> getUserPictureStatistics(@RequestBody UserPictureCountRequest request,
+                                                                    HttpServletRequest httpServletRequest) {
+        // 获取请求中的用户ID
+        Long requestUserId = request.getUserId();
+        ThrowUtils.throwIf(requestUserId == null || requestUserId <= 0, ErrorCode.PARAMS_ERROR, "无效的用户ID");
+
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(httpServletRequest);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR, "用户未登录");
+
+        Long loginUserId = loginUser.getId();
+
+        // 验证当前登录用户ID与请求中的用户ID是否一致
+        if (!request.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
+
+        // 调用服务层方法获取统计数据
+        Map<String, Long> statistics = pictureService.getUserPictureStatistics(requestUserId);
+
+        return ResultUtils.success(statistics);
+    }
+
 
 }

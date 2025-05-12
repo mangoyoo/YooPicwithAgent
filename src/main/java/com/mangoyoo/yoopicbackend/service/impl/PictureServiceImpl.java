@@ -631,7 +631,85 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         // 创建任务
         return aliYunAiApi.createOutPaintingTask(taskRequest);
     }
+    /**
+     * 获取用户图片统计信息
+     * 统计用户在不同类型空间中的图片数量：
+     * - 公共空间（spaceId为空）
+     * - 私人空间（spaceId不为空且spaceType=0）
+     * - 团队空间（spaceId不为空且spaceType=1）
+     *
+     * @param userId 用户ID
+     * @return 包含三种空间图片数量的Map
+     */
+    @Override
+    public Map<String, Long> getUserPictureStatistics(Long userId) {
+        // 验证用户ID
+        ThrowUtils.throwIf(userId == null || userId <= 0, ErrorCode.PARAMS_ERROR, "无效的用户ID");
 
+        // 初始化结果结构
+        Map<String, Long> statistics = new HashMap<>();
+        Long publicSpaceCount = 0L;  // 公共空间图片数量
+        Long privateSpaceCount = 0L; // 私人空间图片数量
+        Long teamSpaceCount = 0L;    // 团队空间图片数量
+
+        // 获取用户的所有图片
+        List<Picture> userPictures = this.lambdaQuery()
+                .eq(Picture::getUserId, userId)
+                .list();
+
+        if (CollUtil.isEmpty(userPictures)) {
+            // 未找到图片，返回零值
+            statistics.put("publicSpaceCount", publicSpaceCount);
+            statistics.put("privateSpaceCount", privateSpaceCount);
+            statistics.put("teamSpaceCount", teamSpaceCount);
+            return statistics;
+        }
+
+        // 统计公共空间的图片数量（spaceId为空）
+        publicSpaceCount = userPictures.stream()
+                .filter(picture -> picture.getSpaceId() == null)
+                .count();
+
+        // 获取非公共图片的所有空间ID
+        Set<Long> spaceIds = userPictures.stream()
+                .filter(picture -> picture.getSpaceId() != null)
+                .map(Picture::getSpaceId)
+                .collect(Collectors.toSet());
+
+        if (!spaceIds.isEmpty()) {
+            // 获取所有相关空间的信息
+            List<Space> spaces = spaceService.lambdaQuery()
+                    .in(Space::getId, spaceIds)
+                    .list();
+
+            // 创建spaceId到spaceType的映射，以便快速查找
+            Map<Long, Integer> spaceTypeMap = spaces.stream()
+                    .collect(Collectors.toMap(Space::getId, Space::getSpaceType));
+
+            // 按空间类型统计图片
+            for (Picture picture : userPictures) {
+                Long spaceId = picture.getSpaceId();
+                if (spaceId != null && spaceTypeMap.containsKey(spaceId)) {
+                    Integer spaceType = spaceTypeMap.get(spaceId);
+                    if (spaceType != null) {
+                        if (spaceType == 0) {
+                            // 私人空间
+                            privateSpaceCount++;
+                        } else if (spaceType == 1) {
+                            // 团队空间
+                            teamSpaceCount++;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 填充结果Map
+        statistics.put("publicSpaceCount", publicSpaceCount);    // 公共空间图片数量
+        statistics.put("privateSpaceCount", privateSpaceCount);  // 私人空间图片数量
+        statistics.put("teamSpaceCount", teamSpaceCount);        // 团队空间图片数量
+        return statistics;
+    }
 }
 
 
