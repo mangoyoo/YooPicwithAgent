@@ -149,6 +149,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setSpaceId(spaceId); // 指定空间 id
         picture.setUrl(uploadPictureResult.getUrl());
         picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
+        picture.setCategory(pictureUploadRequest.getCategory());
+        picture.setTags(JSONUtil.toJsonStr(pictureUploadRequest.getTags()));
         // 支持外层传递图片名称
         String picName = uploadPictureResult.getPicName();
         if (pictureUploadRequest != null && StrUtil.isNotBlank(pictureUploadRequest.getPicName())) {
@@ -250,12 +252,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         queryWrapper.isNull(nullSpaceId, "spaceId");
         queryWrapper.ge(ObjUtil.isNotEmpty(startEditTime), "editTime", startEditTime);
         queryWrapper.lt(ObjUtil.isNotEmpty(endEditTime), "editTime", endEditTime);
-        // JSON 数组查询
+// JSON 数组查询
         if (CollUtil.isNotEmpty(tags)) {
             for (String tag : tags) {
                 queryWrapper.like("tags", "\"" + tag + "\"");
             }
         }
+
         // 排序
         queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
         return queryWrapper;
@@ -413,6 +416,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                     // 设置图片名称，序号连续递增
                     pictureUploadRequest.setPicName(namePrefix + (uploadCount + 1));
                     pictureUploadRequest.setSpaceId(pictureUploadByBatchRequest.getSpaceId());
+                    pictureUploadRequest.setCategory(pictureUploadByBatchRequest.getCategory());
+                    pictureUploadRequest.setTags(pictureUploadByBatchRequest.getTags());
                 }
 
                 PictureVO pictureVO = this.uploadPicture(fileUrl, pictureUploadRequest, loginUser);

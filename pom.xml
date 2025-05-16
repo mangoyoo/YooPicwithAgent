@@ -164,7 +164,6 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>com.mangoyoo.yoopicbackend.YooPicBackendApplication</mainClass>
-                    <skip>true</skip>
                 </configuration>
                 <executions>
                     <execution>
