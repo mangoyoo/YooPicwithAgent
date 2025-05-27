@@ -86,3 +86,5 @@ public class UserAddRequest implements Serializable {
 // Debug: 管理员批量上传图片功能 - 2025-05-14
 
 // Debug: 0519debug - 2025-05-21
+
+// Debug: 实现AI图片编辑功能 - 2025-05-27
