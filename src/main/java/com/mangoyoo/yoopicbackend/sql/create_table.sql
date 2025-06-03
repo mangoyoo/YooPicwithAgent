@@ -230,3 +230,18 @@ create table if not exists space_user
 #     pc.editTime = pt.editTime,
 #     pc.updateTime = pt.updateTime,
 #     pc.reviewTime = pt.reviewTime;
+
+# -- 安全删除旧表（如果存在）
+# DROP TABLE IF EXISTS `picture_dns`;
+#
+# -- 再创建并复制数据
+# CREATE TABLE `picture_dns` LIKE `picture`;
+# INSERT INTO `picture_dns` SELECT * FROM `picture`;
+
+UPDATE picture
+SET url = REPLACE(
+        url,
+        'https://mangoyoo-1322774949.cos.ap-guangzhou.myqcloud.com',
+        'http://www.yoodns.yoopic.space'
+          )
+WHERE url LIKE '%https://mangoyoo-1322774949.cos.ap-guangzhou.myqcloud.com%';
