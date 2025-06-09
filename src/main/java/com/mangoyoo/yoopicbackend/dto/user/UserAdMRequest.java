@@ -90,3 +90,5 @@ public class UserAddRequest implements Serializable {
 // Debug: 实现AI图片编辑功能 - 2025-05-27
 
 // Debug: 实现图库中的各项页面数据分析 - 2025-06-04
+
+// Debug: 团队空间构建 - 2025-06-09
