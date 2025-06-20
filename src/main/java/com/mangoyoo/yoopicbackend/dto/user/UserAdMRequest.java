@@ -94,3 +94,5 @@ public class UserAddRequest implements Serializable {
 // Debug: 团队空间构建 - 2025-06-09
 
 // Debug: 实现图库中的各项页面数据分析 - 2025-06-16
+
+// Debug: 团队空间+团队空间权限校验 - 2025-06-20
