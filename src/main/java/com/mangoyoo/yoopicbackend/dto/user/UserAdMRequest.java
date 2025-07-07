@@ -102,3 +102,5 @@ public class UserAddRequest implements Serializable {
 // Debug: 多用户图片协同编辑 - 2025-07-01
 
 // Debug: 结合Spring AI,升级环境 - 2025-07-03
+
+// Debug: Spring AI Alibaba - 2025-07-07
