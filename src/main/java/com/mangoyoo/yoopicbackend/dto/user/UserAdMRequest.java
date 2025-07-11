@@ -104,3 +104,5 @@ public class UserAddRequest implements Serializable {
 // Debug: 结合Spring AI,升级环境 - 2025-07-03
 
 // Debug: Spring AI Alibaba - 2025-07-07
+
+// Debug: 结合外部MCP工具 - 2025-07-11
