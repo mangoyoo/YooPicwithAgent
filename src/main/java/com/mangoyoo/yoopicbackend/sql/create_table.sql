@@ -237,11 +237,3 @@ create table if not exists space_user
 # -- 再创建并复制数据
 # CREATE TABLE `picture_dns` LIKE `picture`;
 # INSERT INTO `picture_dns` SELECT * FROM `picture`;
-
-UPDATE picture
-SET url = REPLACE(
-        url,
-        'https://mangoyoo-1322774949.cos.ap-guangzhou.myqcloud.com',
-        'http://www.yoodns.yoopic.space'
-          )
-WHERE url LIKE '%https://mangoyoo-1322774949.cos.ap-guangzhou.myqcloud.com%';

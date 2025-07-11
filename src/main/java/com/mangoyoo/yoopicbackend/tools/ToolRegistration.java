@@ -1,55 +1,35 @@
 package com.mangoyoo.yoopicbackend.tools;
 
-import com.mangoyoo.yoopicbackend.manager.upload.OtherFileUpload;
-import jakarta.annotation.Resource;
 import org.springframework.ai.tool.ToolCallback;
-
-// 原来：
-//import org.springframework.ai.tool.ToolCallbacks;
-
-// 改为：
-import org.springframework.ai.support.ToolCallbacks;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.ai.tool.ToolCallbacks;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class ToolRegistration {
-    // 注入已经由Spring管理的HtmlGeneratorTool
-    @Autowired
-    private HtmlGeneratorTool htmlGeneratorTool;  // ✔ 使用Spring注入的实例
-    @Autowired
-    private TerminalOperationTool terminalOperationTool;
-    @Autowired
-    private PDFGenerationTool pdfGenerationTool;
-    @Autowired
-    private TerminateTool terminateTool;
-    @Autowired
-    PictureFinderTool pictureFinderTool;
-    @Autowired
-    PictureColorFinderTool pictureColorFinderTool;
-    @Autowired
-    WebScrapingTool webScrapingTool=new WebScrapingTool();
-    @Autowired
-    HotSearchTool hotSearchTool=new HotSearchTool();
+
+    @Value("${search-api.api-key}")
+    private String searchApiKey;
+
     @Bean
     public ToolCallback[] allTools() {
-        // 删除手动new创建
+        FileOperationTool fileOperationTool = new FileOperationTool();
+        WebSearchTool webSearchTool = new WebSearchTool(searchApiKey);
+        WebScrapingTool webScrapingTool = new WebScrapingTool();
+        ResourceDownloadTool resourceDownloadTool = new ResourceDownloadTool();
+        TerminalOperationTool terminalOperationTool = new TerminalOperationTool();
+        PDFGenerationTool pdfGenerationTool = new PDFGenerationTool();
+        TerminateTool terminateTool = new TerminateTool();
         return ToolCallbacks.from(
-                hotSearchTool,
+                fileOperationTool,
+                webSearchTool,
                 webScrapingTool,
-                pictureColorFinderTool,
-                htmlGeneratorTool,
-                pictureFinderTool,
+                resourceDownloadTool,
+                terminalOperationTool,
+                pdfGenerationTool,
                 terminateTool
         );
     }
 }
-//                pdfGenerationTool,
-//                terminalOperationTool,
-//                fileOperationTool,
-//                webSearchTool,
-//                webScrapingTool,
-//                resourceDownloadTool,
+

@@ -35,7 +35,7 @@ public abstract class ReActAgent extends BaseAgent {
         try {
             boolean shouldAct = think();
             if (!shouldAct) {
-                return "思考完成";
+                return "思考完成 - 无需行动";
             }
             return act();
         } catch (Exception e) {

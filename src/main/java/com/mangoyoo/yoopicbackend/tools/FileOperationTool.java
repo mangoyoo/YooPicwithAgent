@@ -5,9 +5,7 @@ import cn.hutool.core.io.FileUtil;
 import com.mangoyoo.yoopicbackend.constant.FileConstant;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.stereotype.Component;
 
-@Component
 public class FileOperationTool {
 
     private final String FILE_DIR = FileConstant.FILE_SAVE_DIR + "/file";

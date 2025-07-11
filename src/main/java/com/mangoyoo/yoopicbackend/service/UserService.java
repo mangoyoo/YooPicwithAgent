@@ -8,7 +8,7 @@ import com.mangoyoo.yoopicbackend.model.entity.User;
 import com.mangoyoo.yoopicbackend.model.vo.LoginUserVO;
 import com.mangoyoo.yoopicbackend.model.vo.UserVO;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 public interface UserService extends IService<User> {

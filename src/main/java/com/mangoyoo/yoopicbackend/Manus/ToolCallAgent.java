@@ -18,13 +18,8 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.ai.tool.ToolCallback;
-import org.springframework.ai.tool.ToolCallbackProvider;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import java.util.ArrayList;
-import java.util.Arrays;
+
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -35,7 +30,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ToolCallAgent extends ReActAgent {
 
-    private ToolCallbackProvider toolCallbackProvider;
     // 可用的工具
     private final ToolCallback[] availableTools;
 
@@ -48,18 +42,15 @@ public class ToolCallAgent extends ReActAgent {
     // 禁用 Spring AI 内置的工具调用机制，自己维护选项和消息上下文
     private final ChatOptions chatOptions;
 
-    public ToolCallAgent(ToolCallback[] availableTools,ToolCallbackProvider toolCallbackProvider) {
+    public ToolCallAgent(ToolCallback[] availableTools) {
         super();
         this.availableTools = availableTools;
-        this.toolCallbackProvider = toolCallbackProvider;
         this.toolCallingManager = ToolCallingManager.builder().build();
         // 禁用 Spring AI 内置的工具调用机制，自己维护选项和消息上下文
         this.chatOptions = DashScopeChatOptions.builder()
-                .withInternalToolExecutionEnabled(false)
+                .withProxyToolCalls(true)
                 .build();
     }
-
-
 
     /**
      * 处理当前状态并决定下一步行动
@@ -77,18 +68,11 @@ public class ToolCallAgent extends ReActAgent {
         List<Message> messageList = getMessageList();
         Prompt prompt = new Prompt(messageList, this.chatOptions);
         try {
-//  先获取 ToolCallbackProvider 中的工具，然后合并
-            List<ToolCallback> allTools = new ArrayList<>();
-// 添加 availableTools（假设它是 ToolCallback[] 类型）
-            allTools.addAll(Arrays.asList(availableTools));
-// 添加 toolCallbackProvider 提供的工具
-            allTools.addAll(Arrays.asList(toolCallbackProvider.getToolCallbacks()));
             ChatResponse chatResponse = getChatClient().prompt(prompt)
                     .system(getSystemPrompt())
-                    .toolCallbacks(allTools)
+                    .tools(availableTools)
                     .call()
                     .chatResponse();
-
             // 记录响应，用于等下 Act
             this.toolCallChatResponse = chatResponse;
             // 3、解析工具调用结果，获取要调用的工具
@@ -105,7 +89,6 @@ public class ToolCallAgent extends ReActAgent {
                     .collect(Collectors.joining("\n"));
             log.info(toolCallInfo);
             // 如果不需要调用工具，返回 false
-            sendMessage(result);
             if (toolCallList.isEmpty()) {
                 // 只有不调用工具时，才需要手动记录助手消息
                 getMessageList().add(assistantMessage);
@@ -131,58 +114,12 @@ public class ToolCallAgent extends ReActAgent {
         if (!toolCallChatResponse.hasToolCalls()) {
             return "没有工具需要调用";
         }
-        String res="";
-        // 工具名称和消息的映射
-        Map<String, String> toolMessages = Map.of(
-                "getHotNewsContent","搜索热点新闻",
-                "generateAndUploadHtml", "生成HTML页面",
-                "generatePDF", "生成PDF文档",
-                "findPictures", "翻找本站相关图片",
-                "findPicturesByColor","按颜色查找本站",
-                "doTerminate", "任务即将完成",
-                "scrapeImagesByKeyword","搜索图片"
-        );
-
-        // 获取要调用的工具列表
-        AssistantMessage assistantMessage = toolCallChatResponse.getResult().getOutput();
-        List<AssistantMessage.ToolCall> toolCallList = assistantMessage.getToolCalls();
-
-        // 在调用工具前发送工具名称信息
-        String toolName="";
-        if (!toolCallList.isEmpty()) {
-            for (AssistantMessage.ToolCall toolCall : toolCallList) {
-                toolName = toolCall.name();
-                String toolArguments = toolCall.arguments();
-                String message = "正在"+toolMessages.getOrDefault(toolName, "搜索");
-                res= toolMessages.getOrDefault(toolName, "搜索");
-                if(!"doTerminate".equals(toolName)){
-                    try {
-                        ObjectMapper mapper = new ObjectMapper();
-                        JsonNode jsonNode = mapper.readTree(toolArguments);
-                        // 解析参数
-//                        Integer count = jsonNode.has("count") ? jsonNode.get("count").asInt() : null;
-                        String summary = jsonNode.has("summary") ? jsonNode.get("summary").asText() : null;
-                        if (summary!=null)
-                            sendMessage(summary);
-                        else
-                            sendMessage(message);
-                    } catch (Exception e) {
-                        // 处理JSON解析异常
-                        e.printStackTrace();
-                    }
-                }
-
-            }
-        }
-
         // 调用工具
         Prompt prompt = new Prompt(getMessageList(), this.chatOptions);
         ToolExecutionResult toolExecutionResult = toolCallingManager.executeToolCalls(prompt, toolCallChatResponse);
-
         // 记录消息上下文，conversationHistory 已经包含了助手消息和工具调用返回的结果
         setMessageList(toolExecutionResult.conversationHistory());
         ToolResponseMessage toolResponseMessage = (ToolResponseMessage) CollUtil.getLast(toolExecutionResult.conversationHistory());
-
         // 判断是否调用了终止工具
         boolean terminateToolCalled = toolResponseMessage.getResponses().stream()
                 .anyMatch(response -> response.name().equals("doTerminate"));
@@ -190,15 +127,10 @@ public class ToolCallAgent extends ReActAgent {
             // 任务结束，更改状态
             setState(AgentState.FINISHED);
         }
-
-        String finalRes = res;
         String results = toolResponseMessage.getResponses().stream()
-                .map(response ->   response.responseData())
+                .map(response -> "工具 " + response.name() + " 返回的结果：" + response.responseData())
                 .collect(Collectors.joining("\n"));
-        log.info("完成"+finalRes);
-        if("doTerminate".equals(toolName))
-            sendMessage(results);
-        return "完成"+finalRes;
+        log.info(results);
+        return results;
     }
-
 }

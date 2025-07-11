@@ -11,11 +11,10 @@ import com.itextpdf.layout.element.Paragraph;
 import com.mangoyoo.yoopicbackend.constant.FileConstant;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-@Component
+
 public class PDFGenerationTool {
 
     @Tool(description = "Generate a PDF file with given content")
