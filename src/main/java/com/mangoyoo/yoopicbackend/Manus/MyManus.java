@@ -32,4 +32,5 @@ public class MyManus extends ToolCallAgent {
                 .build();
         this.setChatClient(chatClient);
     }
+
 }

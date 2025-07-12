@@ -1,7 +1,13 @@
 package com.mangoyoo.yoopicbackend.tools;
 
 import org.springframework.ai.tool.ToolCallback;
-import org.springframework.ai.tool.ToolCallbacks;
+
+// 原来：
+//import org.springframework.ai.tool.ToolCallbacks;
+
+// 改为：
+import org.springframework.ai.support.ToolCallbacks;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
