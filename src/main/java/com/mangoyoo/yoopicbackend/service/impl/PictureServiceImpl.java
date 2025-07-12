@@ -715,6 +715,63 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         statistics.put("teamSpaceCount", teamSpaceCount);        // 团队空间图片数量
         return statistics;
     }
+    @Override
+    public List<String> findRandomPictureUrlsByTags(List<String> tags, String category, Integer count) {
+        ThrowUtils.throwIf(CollUtil.isEmpty(tags) && StrUtil.isBlank(category),
+                ErrorCode.PARAMS_ERROR, "分类和标签不能同时为空");
+        ThrowUtils.throwIf(count == null || count <= 0, ErrorCode.PARAMS_ERROR, "查找数量必须大于0");
+
+        // 构建查询条件
+        QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
+
+        // 只查询公共图库的图片（spaceId为null）
+        queryWrapper.isNull("spaceId");
+
+        // 检查删除标记（假设0表示未删除，1表示已删除）
+        queryWrapper.eq("isDelete", 0);
+
+        // 审核状态为通过
+        queryWrapper.eq("reviewStatus", PictureReviewStatusEnum.PASS.getValue());
+
+        // 分类匹配（如果提供了分类）
+        if (StrUtil.isNotBlank(category)) {
+            queryWrapper.eq("category", category);
+        }
+
+        // 标签匹配 - 根据现有代码的逻辑，tags存储为JSON字符串
+        if (CollUtil.isNotEmpty(tags)) {
+            for (String tag : tags) {
+                queryWrapper.like("tags", "\"" + tag + "\"");
+            }
+        }
+
+        // 只查询需要的字段以提高性能
+        queryWrapper.select("url");
+
+        // 执行查询
+        List<Picture> pictureList = this.list(queryWrapper);
+
+        // 如果没有找到图片，返回空列表
+        if (CollUtil.isEmpty(pictureList)) {
+            return Collections.emptyList();
+        }
+
+        // 提取URL列表
+        List<String> urlList = pictureList.stream()
+                .map(Picture::getUrl)
+                .filter(StrUtil::isNotBlank)
+                .collect(Collectors.toList());
+
+        // 如果找到的图片数量不超过请求数量，直接返回所有URL
+        if (urlList.size() <= count) {
+            return urlList;
+        }
+
+        // 随机选择指定数量的图片URL
+        Collections.shuffle(urlList);
+        return urlList.subList(0, count);
+    }
+
 }
 
 

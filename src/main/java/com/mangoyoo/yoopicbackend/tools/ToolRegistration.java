@@ -1,5 +1,7 @@
 package com.mangoyoo.yoopicbackend.tools;
 
+import com.mangoyoo.yoopicbackend.manager.upload.OtherFileUpload;
+import jakarta.annotation.Resource;
 import org.springframework.ai.tool.ToolCallback;
 
 // 原来：
@@ -8,34 +10,37 @@ import org.springframework.ai.tool.ToolCallback;
 // 改为：
 import org.springframework.ai.support.ToolCallbacks;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class ToolRegistration {
-
-    @Value("${search-api.api-key}")
-    private String searchApiKey;
-
+    // 注入已经由Spring管理的HtmlGeneratorTool
+    @Autowired
+    private HtmlGeneratorTool htmlGeneratorTool;  // ✔ 使用Spring注入的实例
+    @Autowired
+    private TerminalOperationTool terminalOperationTool;
+    @Autowired
+    private PDFGenerationTool pdfGenerationTool;
+    @Autowired
+    private TerminateTool terminateTool;
+    @Autowired
+    PictureFinderTool pictureFinderTool;
     @Bean
     public ToolCallback[] allTools() {
-        FileOperationTool fileOperationTool = new FileOperationTool();
-        WebSearchTool webSearchTool = new WebSearchTool(searchApiKey);
-        WebScrapingTool webScrapingTool = new WebScrapingTool();
-        ResourceDownloadTool resourceDownloadTool = new ResourceDownloadTool();
-        TerminalOperationTool terminalOperationTool = new TerminalOperationTool();
-        PDFGenerationTool pdfGenerationTool = new PDFGenerationTool();
-        TerminateTool terminateTool = new TerminateTool();
+        // 删除手动new创建
         return ToolCallbacks.from(
-                fileOperationTool,
-                webSearchTool,
-                webScrapingTool,
-                resourceDownloadTool,
+                htmlGeneratorTool,  // ✔ 使用注入的Bean
                 terminalOperationTool,
                 pdfGenerationTool,
+                pictureFinderTool,
                 terminateTool
         );
     }
 }
-
+//                fileOperationTool,
+//                webSearchTool,
+//                webScrapingTool,
+//                resourceDownloadTool,

@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 
 import com.mangoyoo.yoopicbackend.Manus.model.AgentState;
+import jakarta.annotation.Resource;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +19,10 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +34,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ToolCallAgent extends ReActAgent {
 
+    @Resource
+    private ToolCallbackProvider toolCallbackProvider;
     // 可用的工具
     private final ToolCallback[] availableTools;
 
@@ -53,6 +59,7 @@ public class ToolCallAgent extends ReActAgent {
     }
 
 
+
     /**
      * 处理当前状态并决定下一步行动
      *
@@ -69,11 +76,18 @@ public class ToolCallAgent extends ReActAgent {
         List<Message> messageList = getMessageList();
         Prompt prompt = new Prompt(messageList, this.chatOptions);
         try {
+// 方式2：先获取 ToolCallbackProvider 中的工具，然后合并（推荐）
+            List<ToolCallback> allTools = new ArrayList<>();
+// 添加 availableTools（假设它是 ToolCallback[] 类型）
+            allTools.addAll(Arrays.asList(availableTools));
+// 添加 toolCallbackProvider 提供的工具
+            allTools.addAll(Arrays.asList(toolCallbackProvider.getToolCallbacks()));
             ChatResponse chatResponse = getChatClient().prompt(prompt)
                     .system(getSystemPrompt())
-                    .tools(availableTools)
+                    .toolCallbacks(allTools)
                     .call()
                     .chatResponse();
+
             // 记录响应，用于等下 Act
             this.toolCallChatResponse = chatResponse;
             // 3、解析工具调用结果，获取要调用的工具

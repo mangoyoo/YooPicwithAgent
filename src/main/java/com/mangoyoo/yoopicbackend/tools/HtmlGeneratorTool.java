@@ -1,11 +1,9 @@
 package com.mangoyoo.yoopicbackend.tools;
 
 import cn.hutool.core.util.IdUtil;
-import com.mangoyoo.yoopicbackend.app.CodeExpert;
 import com.mangoyoo.yoopicbackend.manager.upload.OtherFileUpload;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 
 @Slf4j
 @Component
@@ -22,25 +19,11 @@ public class HtmlGeneratorTool {
 
     @Resource
     private OtherFileUpload otherFileUpload;
-    private CodeExpert codeExpert;
-    @Resource
-    private ChatModel dashscopeChatModel;
+
     @Tool(description = "Convert the HTML code into the .html file and return its URL.")
     public String generateAndUploadHtml(
-            @ToolParam(description = "HTML code to be written to file") String htmlContent, @ToolParam(description = "A summary of completed steps and explanation of the next steps in Chinese") String summary) {
-        this.codeExpert=new CodeExpert(dashscopeChatModel);
-        String chatId = UUID.randomUUID().toString();
-        // 测试地图 MCP
-//        String message = "我的另一半居住在广州大学城，请帮我找到 10 公里内合适的约会地点";
-        String message = htmlContent;
+            @ToolParam(description = "HTML code to be written to file") String htmlContent) {
 
-        log.info("修改前的代码:", htmlContent);
-        htmlContent =  codeExpert.doChat(message, chatId);
-        if (htmlContent.startsWith("```html")) {
-            // 删除 ```html 前缀，保留后面的内容
-            htmlContent = htmlContent.substring("```html".length());
-        }
-        log.info("修改后的代码:", htmlContent);
         try {
             // 1. 验证HTML内容
             if (htmlContent == null || htmlContent.trim().isEmpty()) {
@@ -153,6 +136,43 @@ public class HtmlGeneratorTool {
         return "HTML content validation passed";
     }
 
+    /**
+     * 生成完整HTML页面（内部方法）
+     */
+    public String generateCompleteHtmlPage(String title, String bodyContent, String cssStyles) {
 
+        try {
+            StringBuilder htmlBuilder = new StringBuilder();
 
+            // 构建完整的HTML页面
+            htmlBuilder.append("<!DOCTYPE html>\n");
+            htmlBuilder.append("<html lang=\"zh-CN\">\n");
+            htmlBuilder.append("<head>\n");
+            htmlBuilder.append("    <meta charset=\"UTF-8\">\n");
+            htmlBuilder.append("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n");
+            htmlBuilder.append("    <title>").append(title != null ? title : "Generated Page").append("</title>\n");
+
+            // 添加CSS样式
+            if (cssStyles != null && !cssStyles.trim().isEmpty()) {
+                htmlBuilder.append("    <style>\n");
+                htmlBuilder.append("        ").append(cssStyles).append("\n");
+                htmlBuilder.append("    </style>\n");
+            }
+
+            htmlBuilder.append("</head>\n");
+            htmlBuilder.append("<body>\n");
+            htmlBuilder.append("    ").append(bodyContent != null ? bodyContent : "<h1>Welcome</h1>").append("\n");
+            htmlBuilder.append("</body>\n");
+            htmlBuilder.append("</html>");
+
+            String htmlContent = htmlBuilder.toString();
+
+            // 上传生成的HTML页面
+            return generateAndUploadHtml(htmlContent);
+
+        } catch (Exception e) {
+            log.error("生成完整HTML页面失败", e);
+            return "Error generating complete HTML page: " + e.getMessage();
+        }
+    }
 }

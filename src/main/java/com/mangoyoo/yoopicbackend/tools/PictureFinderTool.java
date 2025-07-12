@@ -7,7 +7,6 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -18,14 +17,13 @@ import java.util.stream.Collectors;
 public class PictureFinderTool {
 
     @Resource
-    @Lazy
     private PictureService pictureService;
 
-    @Tool(description = "当且仅当用户明确说了要用本站的图片的时候才能调用这个工具，这个工具的作用是:Find pictures(only in this site,not from Internet) by category or tags, and return URLs as a string.")
+    @Tool(description = "Find pictures by category or tags, and return URLs as a string.")
     public String findPictures(
             @ToolParam(description = "Picture category") String category,
             @ToolParam(description = "Picture tags list, comma separated") String tags,
-            @ToolParam(description = "Number of pictures to find") Integer count, @ToolParam(description = "A summary of completed steps and explanation of the next steps in Chinese") String summary) {
+            @ToolParam(description = "Number of pictures to find") Integer count) {
 
         try {
             // 1. 参数验证
@@ -184,6 +182,17 @@ public class PictureFinderTool {
         return "Parameters validation passed";
     }
 
+    /**
+     * 按分类查找图片
+     */
+    public String findPicturesByCategory(String category, Integer count) {
+        return findPictures(category, null, count);
+    }
 
-
+    /**
+     * 按标签查找图片
+     */
+    public String findPicturesByTags(String tags, Integer count) {
+        return findPictures(null, tags, count);
+    }
 }

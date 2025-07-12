@@ -48,7 +48,7 @@ class MyAppTest {
     void testChat2() {
         String chatId = UUID.randomUUID().toString();
         // 第一轮
-        String message = "nihao,wo shi super man";
+        String message = "回答以下问题：1.我现在的地理位置在哪？2.广州塔5公里内有哪些火锅店";
 
 
         Flux<String> responseFlux = myApp.doChatByStream(message,chatId);
@@ -118,8 +118,9 @@ class MyAppTest {
         String chatId = UUID.randomUUID().toString();
         // 测试地图 MCP
 //        String message = "我的另一半居住在广州大学城，请帮我找到 10 公里内合适的约会地点";
-        String message = "帮我搜索有关大海的图片";
+        String message = "回答以下问题：1.广州市附近有哪些有名的徒步打卡点，并且需要相关图片。2.广州塔5公里内有哪些火锅店";
         String answer =  myApp.doChatWithMcp(message, chatId);
+        log.info("answer:", answer);
     }
 
 

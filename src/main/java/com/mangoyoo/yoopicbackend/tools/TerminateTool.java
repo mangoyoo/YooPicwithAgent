@@ -1,10 +1,12 @@
 package com.mangoyoo.yoopicbackend.tools;
 
 import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.stereotype.Component;
 
 /**
  * 终止工具（作用是让自主规划智能体能够合理地中断）
  */
+@Component
 public class TerminateTool {
 
     @Tool(description = """

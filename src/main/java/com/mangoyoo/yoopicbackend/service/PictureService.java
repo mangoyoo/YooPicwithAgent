@@ -77,4 +77,6 @@ public interface PictureService extends IService<Picture> {
     CreateOutPaintingTaskResponse createPictureOutPaintingTask(CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest, User loginUser);
 
     Map<String, Long> getUserPictureStatistics(Long userId);
+
+    List<String> findRandomPictureUrlsByTags(List<String> tags, String category, Integer count);
 }
