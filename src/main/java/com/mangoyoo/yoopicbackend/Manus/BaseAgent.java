@@ -37,7 +37,7 @@ public abstract class BaseAgent {
     private AgentState state = AgentState.IDLE;
 
     // 执行控制
-    private int maxSteps = 10;
+    private int maxSteps = 20;
     private int currentStep = 0;
 
     // LLM
@@ -164,8 +164,8 @@ public abstract class BaseAgent {
                         // 发送每一步的结果
                         if(state != AgentState.FINISHED)
                             emitter.send(result);
-                        else
-                            emitter.send("最终结果:"+preResult);
+//                        else
+//                            emitter.send("最终结果:"+preResult);
                         if(!"思考完成 - 无需行动".equals(stepResult))
                             preResult=stepResult;
                     }
@@ -182,6 +182,7 @@ public abstract class BaseAgent {
                     try {
                         emitter.send("执行错误: " + e.getMessage());
                         emitter.complete();
+                        return;
                     } catch (Exception ex) {
                         emitter.completeWithError(ex);
                     }

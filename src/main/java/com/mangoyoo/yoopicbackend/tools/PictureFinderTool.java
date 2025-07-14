@@ -7,6 +7,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 public class PictureFinderTool {
 
     @Resource
+    @Lazy
     private PictureService pictureService;
 
     @Tool(description = "当且仅当用户明确说了要用本站的图片的时候才能调用这个工具，这个工具的作用是:Find pictures by category or tags, and return URLs as a string.")

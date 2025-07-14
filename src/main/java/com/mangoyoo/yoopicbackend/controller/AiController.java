@@ -2,9 +2,9 @@ package com.mangoyoo.yoopicbackend.controller;
 
 
 import com.mangoyoo.yoopicbackend.Manus.MyManus;
-import com.mangoyoo.yoopicbackend.app.MyApp;
-import com.mangoyoo.yoopicbackend.manager.upload.ChatFileUpload;
+import com.mangoyoo.yoopicbackend.app.DefaultExpert;
 import com.mangoyoo.yoopicbackend.manager.upload.DefaultChatFileUpload;
+import com.mangoyoo.yoopicbackend.service.UserService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
@@ -13,12 +13,8 @@ import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import reactor.core.publisher.Flux;
 import org.springframework.web.multipart.MultipartFile;
-import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RestController
@@ -26,19 +22,16 @@ import java.util.concurrent.CompletableFuture;
 public class AiController {
     @Resource
     DefaultChatFileUpload chatMultipartFileUpload;
+    @Resource
+    private UserService userService;
 
-    private MyApp myApp;
 
-    @Resource
-    private ToolCallback[] allTools;
-    @Resource
-    ToolCallbackProvider toolCallbackProvider;
-    @Resource
-    private ChatModel dashscopeChatModel;
+
 
     @GetMapping("/my_app/chat/sync")
-    public String doChatWithLoveAppSync(String message, String chatId) {
-        return myApp.doChat(message, chatId);
+    public String doChatWithLoveAppSync(String message, String chatId,HttpServletRequest request) {
+        DefaultExpert defaultExpert=userService.getDefaultExpert(request);
+        return defaultExpert.doChat(message, chatId);
     }
 
     @PostMapping(value = "/my_app/chat/sse",
@@ -49,7 +42,7 @@ public class AiController {
             @RequestPart("chatId") String chatId,
             @RequestPart(value = "file", required = false) MultipartFile file,
             HttpServletRequest request) {
-         this.myApp=new MyApp( dashscopeChatModel, allTools, toolCallbackProvider);
+        DefaultExpert defaultExpert=userService.getDefaultExpert(request);
         try {
             log.info("=== 聊天请求开始 - chatId: {} ===", chatId);
 
@@ -100,12 +93,12 @@ public class AiController {
                 // 调用myApp的图片对话方法
                 log.info("开始AI图片对话");
 
-                return myApp.doChatWithImage(message, imageUrl, chatId);
+                return defaultExpert.doChatWithImageSync(message, imageUrl, chatId);
 
             } else {
                 // 无图片的普通对话
                 log.info("开始普通文本对话");
-                return myApp.doChat(message, chatId);
+                return defaultExpert.doChat(message, chatId);
             }
 
         } catch (Exception e) {
@@ -115,9 +108,9 @@ public class AiController {
     }
 
     @GetMapping("/manus/chat/see")
-    public SseEmitter doChatWithManus(String message) {
+    public SseEmitter doChatWithManus(String message,String chatId,HttpServletRequest request) {
         log.info("开始agent对话");
-        MyManus myManus = new MyManus(allTools, dashscopeChatModel,toolCallbackProvider);
+        MyManus myManus = userService.getDefaultManus(request);
         return myManus.runStream(message);
     }
 //@GetMapping("/manus/chat/see")

@@ -22,6 +22,6 @@ public class ManusFactory {
 
     public MyManus createManus() {
         // 将自动注入的MCP工具传递给构造函数
-        return new MyManus(allTools, dashscopeChatModel, toolCallbackProvider);
+        return new MyManus(dashscopeChatModel, allTools, toolCallbackProvider);
     }
 }

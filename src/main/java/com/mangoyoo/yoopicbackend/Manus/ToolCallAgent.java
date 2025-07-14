@@ -139,7 +139,7 @@ public class ToolCallAgent extends ReActAgent {
                 "findPictures", "翻找本站相关图片",
                 "findPicturesByColor","按颜色查找本站",
                 "doTerminate", "任务即将完成",
-                "scrapeWebPage","搜索图片"
+                "scrapeImagesByKeyword","搜索图片"
         );
 
         // 获取要调用的工具列表
@@ -147,12 +147,12 @@ public class ToolCallAgent extends ReActAgent {
         List<AssistantMessage.ToolCall> toolCallList = assistantMessage.getToolCalls();
 
         // 在调用工具前发送工具名称信息
-
+        String toolName="";
         if (!toolCallList.isEmpty()) {
             for (AssistantMessage.ToolCall toolCall : toolCallList) {
-                String toolName = toolCall.name();
-                String message = "正在"+toolMessages.getOrDefault(toolName, "高德地图上搜索");
-                res= toolMessages.getOrDefault(toolName, toolName);
+                toolName = toolCall.name();
+                String message = "正在"+toolMessages.getOrDefault(toolName, "搜索");
+                res= toolMessages.getOrDefault(toolName, "搜索");
                 if(!"doTerminate".equals(toolName))
                     sendMessage(message);
             }
@@ -178,9 +178,10 @@ public class ToolCallAgent extends ReActAgent {
         String results = toolResponseMessage.getResponses().stream()
                 .map(response -> finalRes + " 返回的结果：" + response.responseData())
                 .collect(Collectors.joining("\n"));
-        log.info(results);
-
-        return results;
+        log.info("完成"+finalRes);
+//        if(!"doTerminate".equals(toolName))
+//            sendMessage("完成"+finalRes);
+        return "完成"+finalRes;
     }
 
 }

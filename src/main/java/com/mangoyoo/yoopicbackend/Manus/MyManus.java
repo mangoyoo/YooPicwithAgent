@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class MyManus extends ToolCallAgent {
-    public MyManus(ToolCallback[] allTools, ChatModel dashscopeChatModel,ToolCallbackProvider toolCallbackProvider) {
+    public MyManus(ChatModel dashscopeChatModel ,ToolCallback[] allTools,ToolCallbackProvider toolCallbackProvider) {
         super(allTools,toolCallbackProvider);
         this.setToolCallbackProvider(toolCallbackProvider);
         this.setName("yuManus");
@@ -28,7 +28,7 @@ public class MyManus extends ToolCallAgent {
                 If you want to stop the interaction at any point, use the `terminate` tool/function call.
                 """;
         this.setNextStepPrompt(NEXT_STEP_PROMPT);
-        this.setMaxSteps(10);
+        this.setMaxSteps(20);
         // 初始化 AI 对话客户端
         ChatClient chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultAdvisors(new MyLoggerAdvisor())
