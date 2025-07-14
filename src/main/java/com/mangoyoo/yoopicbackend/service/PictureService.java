@@ -79,4 +79,6 @@ public interface PictureService extends IService<Picture> {
     Map<String, Long> getUserPictureStatistics(Long userId);
 
     List<String> findRandomPictureUrlsByTags(List<String> tags, String category, Integer count);
+
+    List<String> findPictureUrlsByColorSimilarity(String picColor,Integer count);
 }

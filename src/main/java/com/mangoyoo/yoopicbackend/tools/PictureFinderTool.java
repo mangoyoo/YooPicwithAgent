@@ -19,7 +19,7 @@ public class PictureFinderTool {
     @Resource
     private PictureService pictureService;
 
-    @Tool(description = "Find pictures by category or tags, and return URLs as a string.")
+    @Tool(description = "当且仅当用户明确说了要用本站的图片的时候才能调用这个工具，这个工具的作用是:Find pictures by category or tags, and return URLs as a string.")
     public String findPictures(
             @ToolParam(description = "Picture category") String category,
             @ToolParam(description = "Picture tags list, comma separated") String tags,

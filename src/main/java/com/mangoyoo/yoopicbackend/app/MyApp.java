@@ -32,10 +32,8 @@ import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
 @Component
 @Slf4j
 public class MyApp {
-    @Resource
     private ToolCallback[] allTools;
     private final ChatClient chatClient;
-    @Resource
     private ToolCallbackProvider toolCallbackProvider;
     private static final String SYSTEM_PROMPT = "扮演深耕恋爱心理领域的专家。开场向用户表明身份，告知用户可倾诉恋爱难题。" +
             "围绕单身、恋爱、已婚三种状态提问：单身状态询问社交圈拓展及追求心仪对象的困扰；" +
@@ -44,7 +42,7 @@ public class MyApp {
 
     private static final String DEFAULT_MULTIMODEL = "qwen-vl-plus";
 
-    public MyApp(ChatModel dashscopeChatModel) {
+    public MyApp(ChatModel dashscopeChatModel,ToolCallback[] allTools,ToolCallbackProvider toolCallbackProvider) {
         // 创建聊天内存
         ChatMemory chatMemory = MessageWindowChatMemory.builder()
                 .chatMemoryRepository(new InMemoryChatMemoryRepository())

@@ -5,12 +5,15 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.internal.StringUtil;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -43,6 +46,7 @@ public abstract class BaseAgent {
     // Memory（需要自主维护会话上下文）
     private List<Message> messageList = new ArrayList<>();
 
+    private SseEmitter currentEmitter;
     /**
      * 运行代理
      *
@@ -50,6 +54,8 @@ public abstract class BaseAgent {
      * @return 执行结果
      */
     public String run(String userPrompt) {
+        SseEmitter emitter = new SseEmitter(300000L); // 5分钟超时
+        this.currentEmitter = emitter;
         if (this.state != AgentState.IDLE) {
             throw new RuntimeException("Cannot run agent from state: " + this.state);
         }
@@ -85,8 +91,10 @@ public abstract class BaseAgent {
         } finally {
             // 清理资源
             this.cleanup();
+
         }
     }
+
 
     /**
      * 执行单个步骤
@@ -100,6 +108,10 @@ public abstract class BaseAgent {
      */
     protected void cleanup() {
         // 子类可以重写此方法来清理资源
+        // 重置状态为IDLE，使agent可以再次使用
+        this.state = AgentState.IDLE;
+        this.currentStep = 0; // 也可以重置当前步骤
+        this.currentEmitter = null;
     }
     /**
      * 运行代理（流式输出）
@@ -110,12 +122,12 @@ public abstract class BaseAgent {
     public SseEmitter runStream(String userPrompt) {
         // 创建SseEmitter，设置较长的超时时间
         SseEmitter emitter = new SseEmitter(300000L); // 5分钟超时
-
+        this.currentEmitter = emitter;
         // 使用线程异步处理，避免阻塞主线程
         CompletableFuture.runAsync(() -> {
             try {
                 if (this.state != AgentState.IDLE) {
-                    emitter.send("错误：无法从状态运行代理: " + this.state);
+                    emitter.send("错误：无法从该状态运行代理: " + this.state);
                     emitter.complete();
                     return;
                 }
@@ -129,8 +141,17 @@ public abstract class BaseAgent {
                 state = AgentState.RUNNING;
                 // 记录消息上下文
                 messageList.add(new UserMessage(userPrompt));
+                Map<String, String> toolMessages = Map.of(
+                        "generateAndUploadHtml", "正在生成HTML页面",
+                        "generatePDF", "正在生成PDF文档",
+                        "findPictures", "正在翻找本站相关图片",
+                        "findPicturesByColor","正在按颜色查找本站",
+                        "doTerminate", "任务即将完成",
+                        "scrapeWebPage","正在搜索图片"
+                );
 
                 try {
+                    String preResult="";
                     for (int i = 0; i < maxSteps && state != AgentState.FINISHED; i++) {
                         int stepNumber = i + 1;
                         currentStep = stepNumber;
@@ -141,7 +162,12 @@ public abstract class BaseAgent {
                         String result = "Step " + stepNumber + ": " + stepResult;
 
                         // 发送每一步的结果
-                        emitter.send(result);
+                        if(state != AgentState.FINISHED)
+                            emitter.send(result);
+                        else
+                            emitter.send("最终结果:"+preResult);
+                        if(!"思考完成 - 无需行动".equals(stepResult))
+                            preResult=stepResult;
                     }
                     // 检查是否超出步骤限制
                     if (currentStep >= maxSteps) {
@@ -185,5 +211,14 @@ public abstract class BaseAgent {
 
         return emitter;
     }
-
+    // 新增：发送消息的方法
+    protected void sendMessage(String message) {
+        if (currentEmitter != null) {
+            try {
+                currentEmitter.send(message);
+            } catch (Exception e) {
+                log.error("Failed to send message via SSE: " + message, e);
+            }
+        }
+    }
 }

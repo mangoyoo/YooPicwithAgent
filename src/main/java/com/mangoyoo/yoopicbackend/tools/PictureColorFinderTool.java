@@ -9,7 +9,6 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -19,13 +18,12 @@ import java.util.List;
 public class PictureColorFinderTool {
 
     @Resource
-    @Lazy
     private PictureService pictureService;
 
-    @Tool(description = "当且仅当用户明确说了要用本站的图片的时候才能调用这个工具，这个工具的作用是: Find pictures(only in this site,not from Internet) by color similarity from public gallery, and return URLs as a string.")
-    public String findPicturesByColor (
+    @Tool(description = "当且仅当用户明确说了要用本站的图片的时候才能调用这个工具，这个工具的作用是: Find pictures by color similarity from public gallery, and return URLs as a string.")
+    public String findPicturesByColor(
             @ToolParam(description = "Target color in hex format (e.g., #FF0000 for red)") String picColor,
-            @ToolParam(description = "Number of pictures to find ") Integer count, @ToolParam(description = "A summary of completed steps and explanation of the next steps in Chinese") String summary) {
+            @ToolParam(description = "Number of pictures to find (default: 12, max: 50)") Integer count) {
 
         try {
             // 1. 参数验证
@@ -41,9 +39,12 @@ public class PictureColorFinderTool {
 
             // 设置默认数量
             if (count == null || count <= 0) {
-                count = 1;
+                count = 12;
             }
 
+            if (count > 50) {
+                return "Error: Count cannot exceed 50 for performance reasons";
+            }
 
             log.info("开始按颜色查找图片，颜色: {}, 数量: {}", picColor, count);
 
@@ -66,11 +67,11 @@ public class PictureColorFinderTool {
         }
     }
 
-//    @Tool(description = "Find pictures by color similarity with default count (12 pictures).")
-//    public String findPicturesByColorDefault(
-//            @ToolParam(description = "Target color in hex format (e.g., #FF0000 for red)") String picColor) {
-//        return findPicturesByColor(picColor, 12);
-//    }
+    @Tool(description = "Find pictures by color similarity with default count (12 pictures).")
+    public String findPicturesByColorDefault(
+            @ToolParam(description = "Target color in hex format (e.g., #FF0000 for red)") String picColor) {
+        return findPicturesByColor(picColor, 12);
+    }
 
     /**
      * 验证颜色格式

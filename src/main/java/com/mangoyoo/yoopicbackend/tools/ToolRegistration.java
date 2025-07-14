@@ -28,18 +28,25 @@ public class ToolRegistration {
     private TerminateTool terminateTool;
     @Autowired
     PictureFinderTool pictureFinderTool;
+    @Autowired
+    PictureColorFinderTool pictureColorFinderTool;
+    @Autowired
+    WebScrapingTool webScrapingTool=new WebScrapingTool();
+
     @Bean
     public ToolCallback[] allTools() {
         // 删除手动new创建
         return ToolCallbacks.from(
-                htmlGeneratorTool,  // ✔ 使用注入的Bean
-                terminalOperationTool,
+                webScrapingTool,
+                pictureColorFinderTool,
+                htmlGeneratorTool,
                 pdfGenerationTool,
                 pictureFinderTool,
                 terminateTool
         );
     }
 }
+//                terminalOperationTool,
 //                fileOperationTool,
 //                webSearchTool,
 //                webScrapingTool,

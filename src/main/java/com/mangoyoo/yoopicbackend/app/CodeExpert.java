@@ -34,7 +34,9 @@ public class CodeExpert {
     private ToolCallback[] allTools;
     private final ChatClient chatClient;
     private ToolCallbackProvider toolCallbackProvider;
-    private static final String SYSTEM_PROMPT =
+    private static final String SYSTEM_PROMPT = "Here's the English version of the HTML/CSS master prompt:\n" +
+            "\n" +
+            "HTML/CSS Code Master - Page Enhancement Expert\n" +
             "You are a senior front-end development expert specializing in HTML and CSS page beautification. \n" +
             "CORE INSTRUCTION: ONLY respond with complete HTML content. Do NOT include any explanations, comments, or content outside of the HTML code.\n" +
             "Core Capabilities:\n" +
@@ -44,8 +46,7 @@ public class CodeExpert {
             "● Ensure responsive adaptation across different devices\n" +
             "Specific Requirements:\n" +
             "undefined Image Standardization\n" +
-            "  ○ All images unified to a 16:9 ratio (CSS: aspect-ratio: 16/9).The full image will be displayed after being clicked\n" +
-            "The full image will be displayed after being clicked"+
+            "  ○ Set all images to uniform dimensions (e.g., width: 300px, height: 200px, or adjust based on layout needs)\n" +
             "  ○ Add image hover effects, shadows, rounded corners, and other beautification treatments\n" +
             "  ○ Implement image lazy loading and fade-in animation effects\n" +
             "undefined Content Enhancement Principles\n" +
@@ -75,10 +76,11 @@ public class CodeExpert {
             "● Optimized code with good performance\n" +
             "Creative Style:\n" +
             "Pursue ultimate visual effects and user experience. Don't fear complexity - the richer, the better. Every element should have its own personality and animation performance, while maintaining overall coordination and creativity.\n" +
-            "CRITICAL REMINDER: Respond ONLY with complete HTML code. No explanations, no additional text, just pure HTML content.Make sure that the returned result contains no other content except the html or css page code\nThe page elements should be rich rather than monotonous. The layout should be diverse rather than monotonous";
+            "CRITICAL REMINDER: Respond ONLY with complete HTML code. No explanations, no additional text, just pure HTML content.Make sure that the returned result contains no other content except the html or css page code\n";
 
 
-    private static final String SYSTEM_PROMPT2 =
+    private static final String SYSTEM_PROMPT2 = "The following is a prompt designed for HTML/CSS code masters to create highly visual, animation-rich responsive pages:\n" +
+            "\n" +
             "You are a creative front-end art master focused on transforming plain HTML into immersive visual experiences. Please adhere to the following design principles:\n" +
             "\n" +
             "Design Specifications\n" +
@@ -124,6 +126,7 @@ public class CodeExpert {
             "\n" +
             "Output Requirements\n" +
             "Use CSS variables to define the design system\n" +
+            "Include responsive breakpoints: mobile → tablet → desktop\n" +
             "Add at least 3 custom SVG graphics as decorative elements\n" +
             "Implement dark/light mode switching functionality\n" +
             "Use CSS clip-path to create non-rectangular content areas\n" +
@@ -137,7 +140,7 @@ public class CodeExpert {
             "Advanced CSS Features - Variables, clip-path, grid layouts, compound selectors\n" +
             "Dynamic Responsiveness - Multi-device adaptation + dark mode switching\n" +
             "Ideal for transforming simple prototypes into premium pages with micro-interactions, visual storytelling, and immersive experiences, especially suitable for scenarios requiring strong visual impact such as product showcases, portfolios, etc."
-            +"CRITICAL REMINDER: Respond ONLY with complete HTML code. No explanations, no additional text, just pure HTML content.Make sure that the returned result contains no other content except the html or css page code.The page elements should be rich rather than monotonous. The layout should be diverse rather than monotonous"
+            +"CRITICAL REMINDER: Respond ONLY with complete HTML code. No explanations, no additional text, just pure HTML content.Make sure that the returned result contains no other content except the html or css page code"
             ;
     private static final String DEFAULT_MULTIMODEL = "qwen-coder-plus-latest";
 
@@ -165,7 +168,7 @@ public class CodeExpert {
                 .prompt()
                 .user(message)
                 .options(DashScopeChatOptions.builder()
-                        .withModel("qwen-turbo-2025-04-28")  // 指定使用文本模型
+                        .withModel("qwen-plus-2025-04-28")  // 指定使用文本模型
                         .withTemperature(0.8)
                         .build())
                 .advisors(spec -> spec.param(CONVERSATION_ID, chatId)

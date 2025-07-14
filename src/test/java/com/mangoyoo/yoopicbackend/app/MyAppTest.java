@@ -118,7 +118,7 @@ class MyAppTest {
         String chatId = UUID.randomUUID().toString();
         // 测试地图 MCP
 //        String message = "我的另一半居住在广州大学城，请帮我找到 10 公里内合适的约会地点";
-        String message = "回答以下问题：1.广州市附近有哪些有名的徒步打卡点，并且需要相关图片。2.广州塔5公里内有哪些火锅店";
+        String message = "回答以下问题：1.广州市附近有哪些有名的徒步打卡点，并且需要相关图片,最终将文案和图片生成精美的排版的html文件返回给我";
         String answer =  myApp.doChatWithMcp(message, chatId);
         log.info("answer:", answer);
     }

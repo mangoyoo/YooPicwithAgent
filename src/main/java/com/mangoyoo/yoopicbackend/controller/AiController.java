@@ -9,6 +9,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -25,12 +26,13 @@ import java.util.concurrent.CompletableFuture;
 public class AiController {
     @Resource
     DefaultChatFileUpload chatMultipartFileUpload;
-    @Resource
+
     private MyApp myApp;
 
     @Resource
     private ToolCallback[] allTools;
-
+    @Resource
+    ToolCallbackProvider toolCallbackProvider;
     @Resource
     private ChatModel dashscopeChatModel;
 
@@ -47,7 +49,7 @@ public class AiController {
             @RequestPart("chatId") String chatId,
             @RequestPart(value = "file", required = false) MultipartFile file,
             HttpServletRequest request) {
-
+         this.myApp=new MyApp( dashscopeChatModel, allTools, toolCallbackProvider);
         try {
             log.info("=== 聊天请求开始 - chatId: {} ===", chatId);
 
@@ -97,6 +99,7 @@ public class AiController {
 
                 // 调用myApp的图片对话方法
                 log.info("开始AI图片对话");
+
                 return myApp.doChatWithImage(message, imageUrl, chatId);
 
             } else {
@@ -111,61 +114,61 @@ public class AiController {
         }
     }
 
-//    @GetMapping("/manus/chat/see")
-//    public SseEmitter doChatWithManus(String message) {
-//        log.info("开始agent对话");
-//        MyManus myManus = new MyManus(allTools, dashscopeChatModel);
-////        return myManus.runStream(message);
-//    }
-@GetMapping("/manus/chat/see")
-public SseEmitter doChatWithManus(String message) {
-    log.info("开始agent对话，测试文件下载功能");
-
-    SseEmitter emitter = new SseEmitter(60000L); // 60秒超时
-
-    // 使用线程池异步处理，模拟流式响应
-    CompletableFuture.runAsync(() -> {
-        try {
-            // 模拟思考时间
-            Thread.sleep(500);
-
-            // 发送开始回复的消息
-            emitter.send("正在为您");
-            Thread.sleep(300);
-
-            emitter.send("生成文件");
-            Thread.sleep(300);
-
-            emitter.send("，请稍等...");
-            Thread.sleep(800);
-
-            // 发送文件下载链接
-            emitter.send("文件下载链接是：http://www.yoodns.yoopic.space/public/1920742554046758914/2025-05-09_Kpxongvbu39zgXxV.webp");
-            Thread.sleep(500);
-
-            // 发送结束标志
-            emitter.send("[DONE]");
-            emitter.complete();
-
-        } catch (Exception e) {
-            log.error("SSE发送失败", e);
-            emitter.completeWithError(e);
-        }
-    });
-
-    // 设置异常处理
-    emitter.onError(throwable -> {
-        log.error("SSE连接错误", throwable);
-        emitter.complete();
-    });
-
-    // 设置完成处理
-    emitter.onCompletion(() -> {
-        log.info("SSE连接完成");
-    });
-
-    return emitter;
-}
+    @GetMapping("/manus/chat/see")
+    public SseEmitter doChatWithManus(String message) {
+        log.info("开始agent对话");
+        MyManus myManus = new MyManus(allTools, dashscopeChatModel,toolCallbackProvider);
+        return myManus.runStream(message);
+    }
+//@GetMapping("/manus/chat/see")
+//public SseEmitter doChatWithManus(String message) {
+//    log.info("开始agent对话，测试文件下载功能");
+//
+//    SseEmitter emitter = new SseEmitter(60000L); // 60秒超时
+//
+//    // 使用线程池异步处理，模拟流式响应
+//    CompletableFuture.runAsync(() -> {
+//        try {
+//            // 模拟思考时间
+//            Thread.sleep(500);
+//
+//            // 发送开始回复的消息
+//            emitter.send("正在为您");
+//            Thread.sleep(300);
+//
+//            emitter.send("生成文件");
+//            Thread.sleep(300);
+//
+//            emitter.send("，请稍等...");
+//            Thread.sleep(800);
+//
+//            // 发送文件下载链接
+//            emitter.send("文件下载链接是：http://www.yoodns.yoopic.space/public/1920742554046758914/2025-05-09_Kpxongvbu39zgXxV.webp");
+//            Thread.sleep(500);
+//
+//            // 发送结束标志
+//            emitter.send("[DONE]");
+//            emitter.complete();
+//
+//        } catch (Exception e) {
+//            log.error("SSE发送失败", e);
+//            emitter.completeWithError(e);
+//        }
+//    });
+//
+//    // 设置异常处理
+//    emitter.onError(throwable -> {
+//        log.error("SSE连接错误", throwable);
+//        emitter.complete();
+//    });
+//
+//    // 设置完成处理
+//    emitter.onCompletion(() -> {
+//        log.info("SSE连接完成");
+//    });
+//
+//    return emitter;
+//}
 
 }
 

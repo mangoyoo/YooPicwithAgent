@@ -1,9 +1,11 @@
 package com.mangoyoo.yoopicbackend.tools;
 
 import cn.hutool.core.util.IdUtil;
+import com.mangoyoo.yoopicbackend.app.CodeExpert;
 import com.mangoyoo.yoopicbackend.manager.upload.OtherFileUpload;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -19,11 +22,25 @@ public class HtmlGeneratorTool {
 
     @Resource
     private OtherFileUpload otherFileUpload;
-
+    private CodeExpert codeExpert;
+    @Resource
+    private ChatModel dashscopeChatModel;
     @Tool(description = "Convert the HTML code into the .html file and return its URL.")
     public String generateAndUploadHtml(
             @ToolParam(description = "HTML code to be written to file") String htmlContent) {
+        this.codeExpert=new CodeExpert(dashscopeChatModel);
+        String chatId = UUID.randomUUID().toString();
+        // 测试地图 MCP
+//        String message = "我的另一半居住在广州大学城，请帮我找到 10 公里内合适的约会地点";
+        String message = htmlContent;
 
+        log.info("修改前的代码:", htmlContent);
+        htmlContent =  codeExpert.doChat(message, chatId);
+        if (htmlContent.startsWith("```html")) {
+            // 删除 ```html 前缀，保留后面的内容
+            htmlContent = htmlContent.substring("```html".length());
+        }
+        log.info("修改后的代码:", htmlContent);
         try {
             // 1. 验证HTML内容
             if (htmlContent == null || htmlContent.trim().isEmpty()) {
