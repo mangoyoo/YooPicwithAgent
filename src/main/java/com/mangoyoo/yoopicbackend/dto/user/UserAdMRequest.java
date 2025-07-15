@@ -106,3 +106,5 @@ public class UserAddRequest implements Serializable {
 // Debug: Spring AI Alibaba - 2025-07-07
 
 // Debug: 结合外部MCP工具 - 2025-07-11
+
+// Debug: 结合本站MCP工具功能开发，实现内外部资源素材整合的Agent - 2025-07-15
