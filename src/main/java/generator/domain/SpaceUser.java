@@ -6,12 +6,15 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 import java.util.Date;
+
+import groovy.util.logging.Slf4j;
 import lombok.Data;
 
 /**
  * 空间用户关联
  * @TableName space_user
  */
+@Slf4j
 @TableName(value ="space_user")
 @Data
 public class SpaceUser implements Serializable {
