@@ -2,13 +2,15 @@ package com.mangoyoo.yoopicbackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.mangoyoo.yoopicbackend.Manus.MyManus;
+import com.mangoyoo.yoopicbackend.app.DefaultExpert;
 import com.mangoyoo.yoopicbackend.dto.user.UserAvatarUpdateRequest;
 import com.mangoyoo.yoopicbackend.dto.user.UserQueryRequest;
 import com.mangoyoo.yoopicbackend.model.entity.User;
 import com.mangoyoo.yoopicbackend.model.vo.LoginUserVO;
 import com.mangoyoo.yoopicbackend.model.vo.UserVO;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 public interface UserService extends IService<User> {
@@ -80,6 +82,10 @@ public interface UserService extends IService<User> {
     UserVO setUserAvatar(Object inputSource, UserAvatarUpdateRequest userAvatarUpdateRequest, User loginUser);
 
     boolean userChangePassword(String userAccount, String userPassword, String newPassword);
+
+    DefaultExpert getDefaultExpert(HttpServletRequest request);
+
+    MyManus getDefaultManus(HttpServletRequest request);
 }
 
 

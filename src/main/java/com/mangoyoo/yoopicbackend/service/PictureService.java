@@ -11,7 +11,7 @@ import com.mangoyoo.yoopicbackend.model.vo.PictureVO;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
@@ -77,4 +77,8 @@ public interface PictureService extends IService<Picture> {
     CreateOutPaintingTaskResponse createPictureOutPaintingTask(CreatePictureOutPaintingTaskRequest createPictureOutPaintingTaskRequest, User loginUser);
 
     Map<String, Long> getUserPictureStatistics(Long userId);
+
+    List<String> findRandomPictureUrlsByTags(List<String> tags, String category, Integer count);
+
+    List<String> findPictureUrlsByColorSimilarity(String picColor,Integer count);
 }

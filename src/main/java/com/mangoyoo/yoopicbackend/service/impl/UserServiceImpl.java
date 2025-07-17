@@ -5,6 +5,8 @@ import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.mangoyoo.yoopicbackend.Manus.MyManus;
+import com.mangoyoo.yoopicbackend.app.DefaultExpert;
 import com.mangoyoo.yoopicbackend.dto.file.UploadAvatarResult;
 import com.mangoyoo.yoopicbackend.dto.user.UserAvatarUpdateRequest;
 import com.mangoyoo.yoopicbackend.dto.user.UserQueryRequest;
@@ -21,18 +23,23 @@ import com.mangoyoo.yoopicbackend.model.entity.User;
 import com.mangoyoo.yoopicbackend.model.vo.LoginUserVO;
 import com.mangoyoo.yoopicbackend.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.connector.Request;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 import com.mangoyoo.yoopicbackend.config.CosClientConfig;
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.mangoyoo.yoopicbackend.model.constant.UserConstant.USER_LOGIN_STATE;
@@ -50,7 +57,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     private FilePictureUpload filePictureUpload;
     @Resource
     private CosClientConfig cosClientConfig;
-
+    @Resource
+    private ToolCallback[] allTools;
+    @Resource
+    ToolCallbackProvider toolCallbackProvider;
+    @Resource
+    private ChatModel dashscopeChatModel;
+    private final Map<Long, DefaultExpert> expertMap = new ConcurrentHashMap<>();
+    private final Map<Long, MyManus> ManusMap = new ConcurrentHashMap<>();
     @Override
     public long userRegister(String userAccount, String userPassword, String checkPassword) {
         // 1. 校验
@@ -275,8 +289,44 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
         return true;
     }
-
-
+    @Override
+    public DefaultExpert getDefaultExpert(HttpServletRequest request){
+        request.getSession();
+        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        User currentUser = (User) userObj;
+        if (currentUser == null || currentUser.getId() == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        // 从数据库查询（追求性能的话可以注释，直接返回上述结果）
+        long userId = currentUser.getId();
+        if(expertMap.containsKey(userId)){
+            return expertMap.get(userId);//1920742554046758914
+        }
+        else{
+            DefaultExpert defaultExpert=new DefaultExpert(dashscopeChatModel,allTools,toolCallbackProvider);
+            expertMap.put(userId,defaultExpert);
+            return defaultExpert;
+        }
+    }
+    @Override
+    public MyManus getDefaultManus(HttpServletRequest request){
+        return new MyManus(dashscopeChatModel,allTools,toolCallbackProvider);
+//        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+//        User currentUser = (User) userObj;
+//        if (currentUser == null || currentUser.getId() == null) {
+//            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+//        }
+//        // 从数据库查询（追求性能的话可以注释，直接返回上述结果）
+//        long userId = currentUser.getId();
+//        if(ManusMap.containsKey(userId)){
+//            return ManusMap.get(userId);
+//        }
+//        else{
+//            MyManus defaultManus=new MyManus(dashscopeChatModel,allTools,toolCallbackProvider);
+//            ManusMap.put(userId,defaultManus);
+//            return defaultManus;
+//        }
+    }
 }
 
 
