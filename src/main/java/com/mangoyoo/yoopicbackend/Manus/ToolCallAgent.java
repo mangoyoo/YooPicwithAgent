@@ -5,7 +5,6 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 
 import com.mangoyoo.yoopicbackend.Manus.model.AgentState;
-import jakarta.annotation.Resource;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +19,8 @@ import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -134,6 +134,7 @@ public class ToolCallAgent extends ReActAgent {
         String res="";
         // 工具名称和消息的映射
         Map<String, String> toolMessages = Map.of(
+                "getHotNewsContent","搜索热点新闻",
                 "generateAndUploadHtml", "生成HTML页面",
                 "generatePDF", "生成PDF文档",
                 "findPictures", "翻找本站相关图片",
@@ -151,10 +152,26 @@ public class ToolCallAgent extends ReActAgent {
         if (!toolCallList.isEmpty()) {
             for (AssistantMessage.ToolCall toolCall : toolCallList) {
                 toolName = toolCall.name();
+                String toolArguments = toolCall.arguments();
                 String message = "正在"+toolMessages.getOrDefault(toolName, "搜索");
                 res= toolMessages.getOrDefault(toolName, "搜索");
-                if(!"doTerminate".equals(toolName))
-                    sendMessage(message);
+                if(!"doTerminate".equals(toolName)){
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        JsonNode jsonNode = mapper.readTree(toolArguments);
+                        // 解析参数
+//                        Integer count = jsonNode.has("count") ? jsonNode.get("count").asInt() : null;
+                        String summary = jsonNode.has("summary") ? jsonNode.get("summary").asText() : null;
+                        if (summary!=null)
+                            sendMessage(summary);
+                        else
+                            sendMessage(message);
+                    } catch (Exception e) {
+                        // 处理JSON解析异常
+                        e.printStackTrace();
+                    }
+                }
+
             }
         }
 
@@ -176,11 +193,11 @@ public class ToolCallAgent extends ReActAgent {
 
         String finalRes = res;
         String results = toolResponseMessage.getResponses().stream()
-                .map(response -> finalRes + " 返回的结果：" + response.responseData())
+                .map(response ->   response.responseData())
                 .collect(Collectors.joining("\n"));
         log.info("完成"+finalRes);
-//        if(!"doTerminate".equals(toolName))
-//            sendMessage("完成"+finalRes);
+        if("doTerminate".equals(toolName))
+            sendMessage(results);
         return "完成"+finalRes;
     }
 

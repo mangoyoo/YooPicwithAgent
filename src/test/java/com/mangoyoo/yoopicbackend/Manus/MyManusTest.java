@@ -16,7 +16,7 @@ class MyManusTest {
     @Test
     void run() {
         String userPrompt = """  
-               帮我在本站找2张吴京表情包的图片，返回url给我   
+               帮我获取今天的top 3热点新闻，还有广州的天气，做成html文件返回给我   
                 """;
         String answer = myManus.run(userPrompt);
         Assertions.assertNotNull(answer);

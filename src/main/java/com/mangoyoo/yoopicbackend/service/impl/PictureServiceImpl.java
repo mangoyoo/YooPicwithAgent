@@ -779,7 +779,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         if (count == null || count <= 0) {
             count = 1; // 默认数量
         }
-        ThrowUtils.throwIf(count > 50, ErrorCode.PARAMS_ERROR, "查找数量不能超过50");
+        ThrowUtils.throwIf(count > 5, ErrorCode.PARAMS_ERROR, "查找数量不能超过5");
+
         try {
             // 2. 查询公共图库下所有有主色调的图片
             List<Picture> pictureList = this.lambdaQuery()
@@ -789,10 +790,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                     .isNotNull(Picture::getPicColor)  // 必须有主色调
                     .select(Picture::getUrl, Picture::getPicColor)  // 只查询需要的字段
                     .list();
+
             // 如果没有图片，直接返回空列表
             if (CollUtil.isEmpty(pictureList)) {
                 return Collections.emptyList();
             }
+
             // 3. 将目标颜色转为 Color 对象
             Color targetColor;
             try {
@@ -801,8 +804,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 log.error("颜色格式错误: {}", picColor, e);
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "颜色格式错误，请使用十六进制格式，如 #FF0000");
             }
-            // 4. 按颜色相似度排序，返回最相似的图片URL（相似度从高到低）
-            List<String> sortedUrls = pictureList.stream()
+
+            // 4. 按颜色相似度排序，先取前10张相似度最高的图片
+            List<String> top10Urls = pictureList.stream()
                     .filter(picture -> StrUtil.isNotBlank(picture.getUrl()) && StrUtil.isNotBlank(picture.getPicColor()))
                     .sorted(Comparator.comparingDouble(picture -> {
                         try {
@@ -818,15 +822,32 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                         }
                     }))
                     .map(Picture::getUrl)
-                    .limit(count)  // 使用传入的count参数限制数量
+                    .limit(10)  // 先取前10张
                     .collect(Collectors.toList());
-            log.info("按颜色 {} 找到 {} 张相似图片，按相似度从高到低排序", picColor, sortedUrls.size());
-            return sortedUrls;
+
+            // 5. 从前10张中随机选择指定数量
+            List<String> resultUrls = new ArrayList<>();
+            if (!top10Urls.isEmpty()) {
+                // 如果请求数量大于等于可用数量，直接返回所有
+                if (count >= top10Urls.size()) {
+                    resultUrls = new ArrayList<>(top10Urls);
+                } else {
+                    // 随机选择指定数量
+                    List<String> shuffledUrls = new ArrayList<>(top10Urls);
+                    Collections.shuffle(shuffledUrls);
+                    resultUrls = shuffledUrls.subList(0, count);
+                }
+            }
+
+            log.info("按颜色 {} 从前10张相似图片中随机选择了 {} 张", picColor, resultUrls.size());
+            return resultUrls;
+
         } catch (Exception e) {
             log.error("按颜色查找图片失败", e);
             return Collections.emptyList();
         }
     }
+
 
 
 }

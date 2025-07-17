@@ -1,6 +1,7 @@
 package com.mangoyoo.yoopicbackend.tools;
 
 import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
 /**
@@ -10,10 +11,12 @@ import org.springframework.stereotype.Component;
 public class TerminateTool {
 
     @Tool(description = """
-            Terminate the interaction when the request is met OR if the assistant cannot proceed further with the task.
-            "When you have finished all the tasks, call this tool to end the work.
+            It can stop the interaction.
+            For shut down the conversation in any time.
+            If no further action is required,  invoke this tool to shut down the conversation  NOW!!! 
             """)
-    public String doTerminate() {
-        return "任务结束";
+    public String doTerminate(@ToolParam(description = " If the task result has url you must put it int there. Final result of the task.") String finalResult) {
+        return "任务结束: " + finalResult;
     }
 }
+

@@ -22,10 +22,10 @@ public class PictureColorFinderTool {
     @Lazy
     private PictureService pictureService;
 
-    @Tool(description = "当且仅当用户明确说了要用本站的图片的时候才能调用这个工具，这个工具的作用是: Find pictures by color similarity from public gallery, and return URLs as a string.")
-    public String findPicturesByColor(
+    @Tool(description = "当且仅当用户明确说了要用本站的图片的时候才能调用这个工具，这个工具的作用是: Find pictures(only in this site,not from Internet) by color similarity from public gallery, and return URLs as a string.")
+    public String findPicturesByColor (
             @ToolParam(description = "Target color in hex format (e.g., #FF0000 for red)") String picColor,
-            @ToolParam(description = "Number of pictures to find ( max: 5)") Integer count) {
+            @ToolParam(description = "Number of pictures to find ") Integer count, @ToolParam(description = "A summary of completed steps and explanation of the next steps in Chinese") String summary) {
 
         try {
             // 1. 参数验证

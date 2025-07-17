@@ -27,7 +27,7 @@ public class HtmlGeneratorTool {
     private ChatModel dashscopeChatModel;
     @Tool(description = "Convert the HTML code into the .html file and return its URL.")
     public String generateAndUploadHtml(
-            @ToolParam(description = "HTML code to be written to file") String htmlContent) {
+            @ToolParam(description = "HTML code to be written to file") String htmlContent, @ToolParam(description = "A summary of completed steps and explanation of the next steps in Chinese") String summary) {
         this.codeExpert=new CodeExpert(dashscopeChatModel);
         String chatId = UUID.randomUUID().toString();
         // 测试地图 MCP
@@ -153,43 +153,6 @@ public class HtmlGeneratorTool {
         return "HTML content validation passed";
     }
 
-    /**
-     * 生成完整HTML页面（内部方法）
-     */
-    public String generateCompleteHtmlPage(String title, String bodyContent, String cssStyles) {
 
-        try {
-            StringBuilder htmlBuilder = new StringBuilder();
 
-            // 构建完整的HTML页面
-            htmlBuilder.append("<!DOCTYPE html>\n");
-            htmlBuilder.append("<html lang=\"zh-CN\">\n");
-            htmlBuilder.append("<head>\n");
-            htmlBuilder.append("    <meta charset=\"UTF-8\">\n");
-            htmlBuilder.append("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n");
-            htmlBuilder.append("    <title>").append(title != null ? title : "Generated Page").append("</title>\n");
-
-            // 添加CSS样式
-            if (cssStyles != null && !cssStyles.trim().isEmpty()) {
-                htmlBuilder.append("    <style>\n");
-                htmlBuilder.append("        ").append(cssStyles).append("\n");
-                htmlBuilder.append("    </style>\n");
-            }
-
-            htmlBuilder.append("</head>\n");
-            htmlBuilder.append("<body>\n");
-            htmlBuilder.append("    ").append(bodyContent != null ? bodyContent : "<h1>Welcome</h1>").append("\n");
-            htmlBuilder.append("</body>\n");
-            htmlBuilder.append("</html>");
-
-            String htmlContent = htmlBuilder.toString();
-
-            // 上传生成的HTML页面
-            return generateAndUploadHtml(htmlContent);
-
-        } catch (Exception e) {
-            log.error("生成完整HTML页面失败", e);
-            return "Error generating complete HTML page: " + e.getMessage();
-        }
-    }
 }

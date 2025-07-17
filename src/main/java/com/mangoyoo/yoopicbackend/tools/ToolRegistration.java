@@ -32,20 +32,22 @@ public class ToolRegistration {
     PictureColorFinderTool pictureColorFinderTool;
     @Autowired
     WebScrapingTool webScrapingTool=new WebScrapingTool();
-
+    @Autowired
+    HotSearchTool hotSearchTool=new HotSearchTool();
     @Bean
     public ToolCallback[] allTools() {
         // 删除手动new创建
         return ToolCallbacks.from(
+                hotSearchTool,
                 webScrapingTool,
                 pictureColorFinderTool,
                 htmlGeneratorTool,
-                pdfGenerationTool,
                 pictureFinderTool,
                 terminateTool
         );
     }
 }
+//                pdfGenerationTool,
 //                terminalOperationTool,
 //                fileOperationTool,
 //                webSearchTool,
