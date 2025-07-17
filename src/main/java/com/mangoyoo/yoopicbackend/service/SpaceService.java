@@ -10,7 +10,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.mangoyoo.yoopicbackend.model.entity.User;
 import com.mangoyoo.yoopicbackend.model.vo.SpaceVO;
 
-import jakarta.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
 
 /**
 * @author 67622

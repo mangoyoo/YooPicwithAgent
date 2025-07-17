@@ -17,7 +17,7 @@ import com.mangoyoo.yoopicbackend.exception.ErrorCode;
 import com.mangoyoo.yoopicbackend.manager.CosManager;
 import lombok.extern.slf4j.Slf4j;
 
-import jakarta.annotation.Resource;
+import javax.annotation.Resource;
 import java.io.File;
 import java.util.Date;
 import java.util.List;
