@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
  * 抽象基础代理类，用于管理代理状态和执行流程。
  *
  * 提供状态转换、内存管理和基于步骤的执行循环的基础功能。
- * 子类必须实现step方法。
+ * 子类必须实现step方法。1
  */
 @Data
 @Slf4j
