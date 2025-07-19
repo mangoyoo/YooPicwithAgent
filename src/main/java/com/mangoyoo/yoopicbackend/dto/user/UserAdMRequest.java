@@ -108,3 +108,5 @@ public class UserAddRequest implements Serializable {
 // Debug: 结合外部MCP工具 - 2025-07-11
 
 // Debug: 结合本站MCP工具功能开发，实现内外部资源素材整合的Agent - 2025-07-15
+
+// Debug: 0717debug - 2025-07-19
