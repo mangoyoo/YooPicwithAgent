@@ -29,7 +29,7 @@ public class MyManus extends ToolCallAgent {
                 Before using each tool, clearly explain the execution results and suggest the next steps.
                 """;
         this.setNextStepPrompt(NEXT_STEP_PROMPT);
-        this.setMaxSteps(10);
+        this.setMaxSteps(15);
         // 初始化 AI 对话客户端
         ChatClient chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultAdvisors(new MyLoggerAdvisor())

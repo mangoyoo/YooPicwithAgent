@@ -14,7 +14,8 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 抽象基础代理类，用于管理代理状态和执行流程。
@@ -54,7 +55,7 @@ public abstract class BaseAgent {
      * @return 执行结果
      */
     public String run(String userPrompt) {
-        SseEmitter emitter = new SseEmitter(300000L); // 5分钟超时
+        SseEmitter emitter = new SseEmitter(3000000L); // 5分钟超时
         this.currentEmitter = emitter;
         if (this.state != AgentState.IDLE) {
             throw new RuntimeException("Cannot run agent from state: " + this.state);
@@ -123,16 +124,41 @@ public abstract class BaseAgent {
         // 创建SseEmitter，设置较长的超时时间
         SseEmitter emitter = new SseEmitter(300000L); // 5分钟超时
         this.currentEmitter = emitter;
+
+        // 创建心跳任务
+        ScheduledExecutorService heartbeatExecutor = Executors.newSingleThreadScheduledExecutor();
+        AtomicBoolean isCompleted = new AtomicBoolean(false);
+
+        // 启动心跳任务，每30秒发送一次
+        ScheduledFuture<?> heartbeatTask = heartbeatExecutor.scheduleAtFixedRate(() -> {
+            try {
+                if (!isCompleted.get()) {
+                    emitter.send(SseEmitter.event()
+                            .name("heartbeat")
+                            .data("ping")
+                            .comment("heartbeat"));
+                    log.debug("Sent heartbeat");
+                }
+            } catch (Exception e) {
+                log.warn("Failed to send heartbeat", e);
+                isCompleted.set(true);
+            }
+        }, 30, 30, TimeUnit.SECONDS);
+
         // 使用线程异步处理，避免阻塞主线程
         CompletableFuture.runAsync(() -> {
             try {
                 if (this.state != AgentState.IDLE) {
-                    emitter.send("错误：无法从该状态运行代理: " + this.state);
+                    emitter.send(SseEmitter.event()
+                            .name("error")
+                            .data("错误：无法从该状态运行代理: " + this.state));
                     emitter.complete();
                     return;
                 }
                 if (StringUtil.isBlank(userPrompt)) {
-                    emitter.send("错误：不能使用空提示词运行代理");
+                    emitter.send(SseEmitter.event()
+                            .name("error")
+                            .data("错误：不能使用空提示词运行代理"));
                     emitter.complete();
                     return;
                 }
@@ -141,17 +167,14 @@ public abstract class BaseAgent {
                 state = AgentState.RUNNING;
                 // 记录消息上下文
                 messageList.add(new UserMessage(userPrompt));
-                Map<String, String> toolMessages = Map.of(
-                        "generateAndUploadHtml", "正在生成HTML页面",
-                        "generatePDF", "正在生成PDF文档",
-                        "findPictures", "正在翻找本站相关图片",
-                        "findPicturesByColor","正在按颜色查找本站",
-                        "doTerminate", "任务即将完成",
-                        "scrapeWebPage","正在搜索图片"
-                );
+
+                // 发送开始消息
+                emitter.send(SseEmitter.event()
+                        .name("start")
+                        .data("智能体开始执行..."));
 
                 try {
-                    String preResult="";
+                    String preResult = "";
                     for (int i = 0; i < maxSteps && state != AgentState.FINISHED; i++) {
                         int stepNumber = i + 1;
                         currentStep = stepNumber;
@@ -162,27 +185,34 @@ public abstract class BaseAgent {
                         String result = "Step " + stepNumber + ": " + stepResult;
 
                         // 发送每一步的结果
-                        if(state != AgentState.FINISHED)
-                            emitter.send(result);
-//                        if(state == AgentState.FINISHED)
-//                            emitter.send("最终结果:"+preResult);
-                        if(!"思考完成".equals(stepResult))
-                            preResult=stepResult;
+                        if (state != AgentState.FINISHED) {
+                            emitter.send(SseEmitter.event()
+                                    .name("step")
+                                    .data(result));
+                        }
+                        if (!"思考完成".equals(stepResult)) {
+                            preResult = stepResult;
+                        }
                     }
+
                     // 检查是否超出步骤限制
                     if (currentStep >= maxSteps) {
                         state = AgentState.FINISHED;
-                        emitter.send("执行结束: 达到最大步骤 (" + maxSteps + ")");
+                        emitter.send(SseEmitter.event()
+                                .name("finish")
+                                .data("执行结束: 达到最大步骤 (" + maxSteps + ")"));
                     }
+
                     // 正常完成
                     emitter.complete();
                 } catch (Exception e) {
                     state = AgentState.ERROR;
                     log.error("执行智能体失败", e);
                     try {
-                        emitter.send("执行错误: " + e.getMessage());
+                        emitter.send(SseEmitter.event()
+                                .name("error")
+                                .data("执行错误: " + e.getMessage()));
                         emitter.complete();
-                        return;
                     } catch (Exception ex) {
                         emitter.completeWithError(ex);
                     }
@@ -192,6 +222,11 @@ public abstract class BaseAgent {
                 }
             } catch (Exception e) {
                 emitter.completeWithError(e);
+            } finally {
+                // 标记完成，停止心跳
+                isCompleted.set(true);
+                heartbeatTask.cancel(false);
+                heartbeatExecutor.shutdown();
             }
         });
 
@@ -199,6 +234,9 @@ public abstract class BaseAgent {
         emitter.onTimeout(() -> {
             this.state = AgentState.ERROR;
             this.cleanup();
+            isCompleted.set(true);
+            heartbeatTask.cancel(false);
+            heartbeatExecutor.shutdown();
             log.warn("SSE connection timed out");
         });
 
@@ -207,11 +245,25 @@ public abstract class BaseAgent {
                 this.state = AgentState.FINISHED;
             }
             this.cleanup();
+            isCompleted.set(true);
+            heartbeatTask.cancel(false);
+            heartbeatExecutor.shutdown();
             log.info("SSE connection completed");
+        });
+
+        // 添加错误回调
+        emitter.onError((ex) -> {
+            this.state = AgentState.ERROR;
+            this.cleanup();
+            isCompleted.set(true);
+            heartbeatTask.cancel(false);
+            heartbeatExecutor.shutdown();
+            log.error("SSE connection error", ex);
         });
 
         return emitter;
     }
+
     // 新增：发送消息的方法
     protected void sendMessage(String message) {
         if (currentEmitter != null) {

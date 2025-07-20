@@ -25,9 +25,9 @@ public class HtmlGeneratorTool {
     private CodeExpert codeExpert;
     @Resource
     private ChatModel dashscopeChatModel;
-    @Tool(description = "Convert the HTML code into the .html file and return its URL.")
+    @Tool(description = "Convert the text content into an HTML page and return its URL.")
     public String generateAndUploadHtml(
-            @ToolParam(description = "HTML code to be written to file") String htmlContent, @ToolParam(description = "A summary of completed steps and explanation of the next steps in Chinese") String summary) {
+            @ToolParam(description = "Text content") String htmlContent, @ToolParam(description = "A summary of completed steps and explanation of the next steps in Chinese") String summary) {
         this.codeExpert=new CodeExpert(dashscopeChatModel);
         String chatId = UUID.randomUUID().toString();
         // 测试地图 MCP
@@ -76,83 +76,6 @@ public class HtmlGeneratorTool {
             return "Error generating or uploading HTML file: " + e.getMessage();
         }
     }
-
-    /**
-     * 生成带自定义文件名的HTML文件并上传（内部方法）
-     */
-    public String generateAndUploadHtmlWithFilename(String htmlContent, String customFilename) {
-
-        try {
-            // 1. 验证HTML内容
-            if (htmlContent == null || htmlContent.trim().isEmpty()) {
-                return "Error: HTML content cannot be empty";
-            }
-
-            // 2. 验证自定义文件名
-            if (customFilename == null || customFilename.trim().isEmpty()) {
-                return "Error: Custom filename cannot be empty";
-            }
-
-            // 3. 使用自定义文件名
-            String fileName = customFilename.trim() + ".html";
-
-            log.info("开始生成HTML文件: {}", fileName);
-
-            // 4. 直接从HTML内容创建MultipartFile
-            byte[] htmlBytes = htmlContent.getBytes(StandardCharsets.UTF_8);
-            MultipartFile multipartFile = new MockMultipartFile(
-                    "file",
-                    fileName,
-                    "text/html",
-                    htmlBytes
-            );
-
-            log.info("HTML文件创建成功，文件大小: {} bytes", htmlBytes.length);
-
-            // 5. 上传到第三方存储
-            log.info("开始上传HTML文件到云存储");
-            String uploadUrl = otherFileUpload.uploadFile(multipartFile, "html");
-
-            log.info("HTML文件上传成功，URL: {}", uploadUrl);
-
-            return uploadUrl;
-
-        } catch (Exception e) {
-            log.error("生成或上传HTML文件失败", e);
-            return "Error generating or uploading HTML file: " + e.getMessage();
-        }
-    }
-
-    /**
-     * 验证HTML内容（内部方法）
-     */
-    public String validateHtmlContent(String htmlContent) {
-        if (htmlContent == null || htmlContent.trim().isEmpty()) {
-            return "Error: HTML content cannot be empty";
-        }
-
-        // 基本的HTML验证
-        String lowerContent = htmlContent.toLowerCase();
-        if (!lowerContent.contains("<html") && !lowerContent.contains("<!doctype")) {
-            return "Warning: Content may not be valid HTML (missing <html> tag or DOCTYPE declaration)";
-        }
-
-        // 检查基本的HTML结构
-        if (lowerContent.contains("<html") && !lowerContent.contains("</html>")) {
-            return "Warning: HTML tag is not properly closed";
-        }
-
-        if (lowerContent.contains("<head") && !lowerContent.contains("</head>")) {
-            return "Warning: HEAD tag is not properly closed";
-        }
-
-        if (lowerContent.contains("<body") && !lowerContent.contains("</body>")) {
-            return "Warning: BODY tag is not properly closed";
-        }
-
-        return "HTML content validation passed";
-    }
-
 
 
 }

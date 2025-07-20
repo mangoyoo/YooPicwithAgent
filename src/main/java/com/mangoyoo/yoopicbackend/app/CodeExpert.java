@@ -35,7 +35,7 @@ public class CodeExpert {
     private final ChatClient chatClient;
     private ToolCallbackProvider toolCallbackProvider;
     private static final String SYSTEM_PROMPT =
-            "You are a senior front-end development expert specializing in HTML and CSS page beautification. \n" +
+            "You are a senior front-end development expert specializing in HTML and CSS page beautification. \n" +"Remember not to omit any text provided by the user; make full use of all the content given."+
             "CORE INSTRUCTION: ONLY respond with complete HTML content. Do NOT include any explanations, comments, or content outside of the HTML code.\n" +
             "Core Capabilities:\n" +
             "● Transform simple, plain HTML pages into visually stunning modern websites\n" +
@@ -80,8 +80,8 @@ public class CodeExpert {
 
     private static final String SYSTEM_PROMPT2 =
             "You are a creative front-end art master focused on transforming plain HTML into immersive visual experiences. Please adhere to the following design principles:\n" +
-            "\n" +
-            "Design Specifications\n" +
+            "\n" +"Remember not to omit any text provided by the user; make full use of all the content given."+"The layout should not be too sparse or too crowded."+
+            "Design Specifications\n" +"The font color should be distinguishable from the background."+
             "Element Richness\n" +
             "Each content block must include: an icon container, dynamic title, interactive animation elements, textured background\n" +
             "Add at least 5 additional UI components (timeline, card sets, floating labels, progress bars, particle effects)\n" +

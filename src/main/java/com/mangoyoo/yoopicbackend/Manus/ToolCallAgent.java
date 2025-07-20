@@ -48,6 +48,9 @@ public class ToolCallAgent extends ReActAgent {
     // 禁用 Spring AI 内置的工具调用机制，自己维护选项和消息上下文
     private final ChatOptions chatOptions;
 
+    // 记录上一个调用的工具名称
+    private String preToolName;
+
     public ToolCallAgent(ToolCallback[] availableTools,ToolCallbackProvider toolCallbackProvider) {
         super();
         this.availableTools = availableTools;
@@ -57,6 +60,7 @@ public class ToolCallAgent extends ReActAgent {
         this.chatOptions = DashScopeChatOptions.builder()
                 .withInternalToolExecutionEnabled(false)
                 .build();
+        this.preToolName = ""; // 初始化为空字符串
     }
 
 
@@ -196,9 +200,27 @@ public class ToolCallAgent extends ReActAgent {
                 .map(response ->   response.responseData())
                 .collect(Collectors.joining("\n"));
         log.info("完成"+finalRes);
-        if("doTerminate".equals(toolName))
+
+        if("doTerminate".equals(toolName)) {
             sendMessage(results);
+            // 如果上一个调用的工具是 generateAndUploadHtml，则等待3秒
+//            if("generateAndUploadHtml".equals(preToolName)) {
+//                sendMessage("等待中");
+////                try {
+////                    Thread.sleep(3000); // 等待3秒
+////                    log.info("HTML生成完成后等待3秒");
+////                } catch (InterruptedException e) {
+////                    log.warn("等待过程被中断", e);
+////                    Thread.currentThread().interrupt(); // 重新设置中断状态
+////                }
+//            }
+        }
+
+        // 更新上一个工具名称为当前工具名称
+        this.preToolName = toolName;
+
         return "完成"+finalRes;
+//        return "完成"+results;
     }
 
 }

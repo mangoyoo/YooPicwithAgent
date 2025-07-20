@@ -237,3 +237,16 @@ create table if not exists space_user
 # -- 再创建并复制数据
 # CREATE TABLE `picture_dns` LIKE `picture`;
 # INSERT INTO `picture_dns` SELECT * FROM `picture`;
+
+
+
+SELECT url, REPLACE(url, 'http://', 'https://') as new_url
+FROM picture
+WHERE url LIKE 'http://%';
+
+
+
+UPDATE picture
+SET url = REPLACE(url, 'http://', 'https://')
+WHERE url LIKE 'http://%';
+
