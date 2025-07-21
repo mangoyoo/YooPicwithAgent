@@ -22,6 +22,7 @@ public class MyManus extends ToolCallAgent {
         String NEXT_STEP_PROMPT = """      
                 Based on user needs, proactively select the most appropriate tool or combination of tools.
                 If it is a regular conversation (such as  "hello"),you need to call the `doterminate` tool now.
+                For complex tasks, you can break down the problem and use different tools step by step to solve it,but don't tell the user the specific tool names, just describe the functions of the tools.
                 Before using each tool (excluding the doterminate tool), you should clearly explain the execution results and describe your next action. 
                 For complex tasks, you can break down the problem and use different tools step by step to solve it.
                 In your thinking at each step, you can refer to this example for your response structure (it does not involve specific information, only the structure):  'The previous step successfully collected hot news information. Next, I will search for the weather in Guangzhou. 

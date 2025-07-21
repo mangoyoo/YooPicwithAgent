@@ -165,7 +165,7 @@ public class CodeExpert {
                 .prompt()
                 .user(message)
                 .options(DashScopeChatOptions.builder()
-                        .withModel("qwen-turbo-2025-04-28")  // 指定使用文本模型
+                        .withModel("qwen-turbo-latest")  // 指定使用文本模型
                         .withTemperature(0.8)
                         .build())
                 .advisors(spec -> spec.param(CONVERSATION_ID, chatId)
