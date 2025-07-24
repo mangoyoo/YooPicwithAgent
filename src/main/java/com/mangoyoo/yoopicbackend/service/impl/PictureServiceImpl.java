@@ -32,6 +32,7 @@ import com.mangoyoo.yoopicbackend.mapper.PictureMapper;
 import com.mangoyoo.yoopicbackend.service.SpaceService;
 import com.mangoyoo.yoopicbackend.util.ColorSimilarUtils;
 import com.mangoyoo.yoopicbackend.util.ColorTransformUtils;
+import com.mangoyoo.yoopicbackend.util.MultiLevelCacheUtil;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -79,6 +80,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     private TransactionTemplate transactionTemplate;
     @Resource
     private AliYunAiApi aliYunAiApi;
+    @Resource
+    private MultiLevelCacheUtil multiLevelCacheUtil;
     @Override
     public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
         // 校验参数
@@ -848,6 +851,65 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
     }
 
+
+
+    /**
+     * 带缓存的分页查询
+     */
+    @Override
+    public Page<PictureVO> listPictureVOByPageWithCache(PictureQueryRequest pictureQueryRequest, HttpServletRequest request) {
+        // 生成缓存键
+        String cacheKey = generateCacheKey(pictureQueryRequest);
+
+        // 尝试从多级缓存获取
+        Page<PictureVO> cachedResult = multiLevelCacheUtil.getFromMultiLevelCache(cacheKey);
+        if (cachedResult != null) {
+            log.info("查找多级缓存成功！");
+            return cachedResult;
+        }
+
+        // 缓存未命中，查询数据库
+        long current = pictureQueryRequest.getCurrent();
+        long size = pictureQueryRequest.getPageSize();
+        Page<Picture> picturePage = this.page(new Page<>(current, size), this.getQueryWrapper(pictureQueryRequest));
+        Page<PictureVO> result = this.getPictureVOPage(picturePage, request);
+
+        // 存储到多级缓存
+        multiLevelCacheUtil.putToMultiLevelCache(cacheKey, result);
+
+        return result;
+    }
+
+    /**
+     * 生成缓存键
+     */
+    private String generateCacheKey(PictureQueryRequest request) {
+        StringBuilder keyBuilder = new StringBuilder();
+        keyBuilder.append("page:").append(request.getCurrent())
+                .append(":size:").append(request.getPageSize());
+
+        if (request.getSpaceId() != null) {
+            keyBuilder.append(":spaceId:").append(request.getSpaceId());
+        }
+        if (StrUtil.isNotBlank(request.getSearchText())) {
+            keyBuilder.append(":search:").append(request.getSearchText());
+        }
+        if (StrUtil.isNotBlank(request.getCategory())) {
+            keyBuilder.append(":category:").append(request.getCategory());
+        }
+        if (CollUtil.isNotEmpty(request.getTags())) {
+            keyBuilder.append(":tags:").append(String.join(",", request.getTags()));
+        }
+        if (request.getReviewStatus() != null) {
+            keyBuilder.append(":reviewStatus:").append(request.getReviewStatus());
+        }
+        if (StrUtil.isNotBlank(request.getSortField())) {
+            keyBuilder.append(":sort:").append(request.getSortField())
+                    .append(":").append(request.getSortOrder());
+        }
+
+        return keyBuilder.toString();
+    }
 
 
 }

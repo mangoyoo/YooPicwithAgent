@@ -3,6 +3,9 @@ package com.mangoyoo.yoopicbackend.Manus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.Comparator;
+import java.util.PriorityQueue;
+
 /**
  * ReAct (Reasoning and Acting) 模式的代理抽象类
  * 实现了思考-行动的循环模式
@@ -33,6 +36,7 @@ public abstract class ReActAgent extends BaseAgent {
     @Override
     public String step() {
         try {
+
             boolean shouldAct = think();
             if (!shouldAct) {
                 return "思考完成";

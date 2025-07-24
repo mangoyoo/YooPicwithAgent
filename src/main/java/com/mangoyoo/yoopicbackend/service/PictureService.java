@@ -81,4 +81,6 @@ public interface PictureService extends IService<Picture> {
     List<String> findRandomPictureUrlsByTags(List<String> tags, String category, Integer count);
 
     List<String> findPictureUrlsByColorSimilarity(String picColor,Integer count);
+
+    Page<PictureVO> listPictureVOByPageWithCache(PictureQueryRequest pictureQueryRequest, HttpServletRequest request);
 }
